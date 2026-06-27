@@ -23,7 +23,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/bin/stdio.js",
-    "start": "node dist/bin/stdio.js"
+    "start": "node dist/bin/stdio.js",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "mcp",
