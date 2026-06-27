@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { READ_ONLY, WRITE_SAFE, DESTRUCTIVE } from '../src/annotations.js';
 import { createServer } from '../src/server.js';
+import { buildClient } from '../src/client.js';
 
 describe('annotation presets', () => {
   it('READ_ONLY marks a non-destructive read', () => {
@@ -18,9 +19,11 @@ describe('annotation presets', () => {
 });
 
 describe('createServer', () => {
-  it('builds without throwing and without requiring credentials', () => {
-    // Client construction is lazy, so the server wires up tools/resources
-    // even with no SIGNDOCS_* env vars present.
-    expect(() => createServer()).not.toThrow();
+  it('builds with an injected tool context', () => {
+    const ctx = {
+      client: buildClient({ mode: 'credentials', clientId: 'cid', clientSecret: 'sec', environment: 'hml' }),
+      environment: 'hml' as const,
+    };
+    expect(() => createServer(ctx)).not.toThrow();
   });
 });

@@ -1,14 +1,15 @@
 {
   "name": "@signdocs-brasil/mcp-server",
-  "version": "0.1.0",
-  "description": "Model Context Protocol (MCP) server for the SignDocs Brasil e-signature API — lets AI agents create signing sessions, manage envelopes, verify documents and more.",
+  "version": "0.2.0",
+  "description": "Model Context Protocol (MCP) server for the SignDocs Brasil e-signature API — lets AI agents create signing sessions, manage envelopes, verify documents and more. Local stdio + remote HTTP transports.",
   "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=18"
   },
   "bin": {
-    "signdocs-mcp": "dist/bin/stdio.js"
+    "signdocs-mcp": "dist/bin/stdio.js",
+    "signdocs-mcp-http": "dist/bin/http.js"
   },
   "main": "dist/server.js",
   "types": "dist/server.d.ts",
@@ -18,12 +19,13 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && chmod +x dist/bin/stdio.js",
+    "build": "tsc -p tsconfig.json && chmod +x dist/bin/stdio.js dist/bin/http.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "inspect": "npm run build && npx @modelcontextprotocol/inspector node dist/bin/stdio.js",
     "start": "node dist/bin/stdio.js",
+    "start:http": "node dist/bin/http.js",
     "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [

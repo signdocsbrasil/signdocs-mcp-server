@@ -105,6 +105,63 @@ The server exposes grounding resources the model can read on demand:
 - `signdocs://policy-profiles` — valid `policyProfile` values and CUSTOM steps
 - `signdocs://webhook-events` — all subscribable event types
 
+## Remote HTTP transport (multi-tenant)
+
+The same tools are also served over **Streamable HTTP** so a single deployment
+can serve many AI agents/tenants — each authenticates per session with its own
+SignDocs credentials (no shared secret baked into the server).
+
+```bash
+npm run start:http        # or: signdocs-mcp-http   (listens on PORT, default 3000)
+# or containerized:
+docker build -t signdocs-mcp . && docker run -p 3000:3000 signdocs-mcp
+```
+
+**Endpoint:** `POST /mcp` (Streamable HTTP). Auth is required on the MCP
+`initialize` request, via the `Authorization` header:
+
+- `Authorization: Bearer <token>` — a SignDocs OAuth2 access token (from
+  `/oauth2/token`), passed straight through to the API.
+- `Authorization: Basic base64(clientId:clientSecret)` — the server runs the
+  `client_credentials` exchange for you.
+
+Pick the environment per session with `X-SignDocs-Environment: hml|production`
+(defaults to the server's configured default).
+
+The server behaves as an **OAuth 2.0 Resource Server**: it serves
+`GET /.well-known/oauth-protected-resource` (RFC 9728, pointing at the SignDocs
+authorization server) and answers an unauthenticated `initialize` with `401` +
+`WWW-Authenticate`. The SignDocs API remains the authoritative token validator.
+`GET /healthz` is an unauthenticated health probe.
+
+Example client config (Bearer):
+
+```json
+{
+  "mcpServers": {
+    "signdocs-remote": {
+      "type": "http",
+      "url": "https://your-host.example/mcp",
+      "headers": {
+        "Authorization": "Bearer <signdocs_access_token>",
+        "X-SignDocs-Environment": "hml"
+      }
+    }
+  }
+}
+```
+
+**Server env vars:** `PORT`, `HOST`, `SIGNDOCS_ENVIRONMENT` (default env),
+`MCP_PUBLIC_URL` (for resource metadata behind a proxy), `MCP_CORS_ORIGIN`,
+`MCP_DNS_REBINDING_PROTECTION=true` + `MCP_ALLOWED_HOSTS` / `MCP_ALLOWED_ORIGINS`
+(recommended in production).
+
+> Sessions are held in process memory, so run a single instance or use sticky
+> routing. For multi-instance/serverless, front it with sticky sessions or swap
+> the session map for a shared store + EventStore (resumability). Deploying onto
+> the existing `external-api` Lambda + API Gateway as a NestedStack is the
+> intended production path.
+
 ## Development
 
 ```bash
@@ -116,6 +173,10 @@ npm run inspect    # build + launch MCP Inspector against the stdio server
 
 ## Roadmap
 
-- **v0.1 (this release):** local stdio server, full tool catalog, env credentials.
-- **Phase 2:** remote Streamable-HTTP transport with per-tenant OAuth (the tool
-  layer is already transport-agnostic — see `src/http/server.ts`).
+- **v0.1:** local stdio server, full tool catalog, env credentials.
+- **v0.2 (this release):** remote Streamable-HTTP transport with per-session,
+  per-tenant auth (Bearer passthrough or Basic client-credentials) and OAuth
+  Resource Server discovery. Tool layer is shared between both transports.
+- **Next:** deploy the HTTP transport onto `external-api` (Lambda + API Gateway
+  NestedStack); optional edge JWT validation + shared-store sessions for
+  horizontal scale.

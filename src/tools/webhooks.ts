@@ -1,11 +1,11 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { WebhookEventType } from '@signdocs-brasil/api';
-import { getClient } from '../client.js';
+import type { ToolContext } from '../client.js';
 import { CONFIRM_WARNING, DESTRUCTIVE, READ_ONLY, WRITE_SAFE } from '../annotations.js';
 import { run } from './helpers.js';
 import { registerWebhookShape, webhookIdShape } from '../schemas.js';
 
-export function registerWebhookTools(server: McpServer): void {
+export function registerWebhookTools(server: McpServer, ctx: ToolContext): void {
   server.registerTool(
     'register_webhook',
     {
@@ -18,7 +18,7 @@ export function registerWebhookTools(server: McpServer): void {
     },
     async (args) =>
       run(() =>
-        getClient().webhooks.register({ url: args.url, events: args.events as WebhookEventType[] }),
+        ctx.client.webhooks.register({ url: args.url, events: args.events as WebhookEventType[] }),
       ),
   );
 
@@ -30,7 +30,7 @@ export function registerWebhookTools(server: McpServer): void {
       inputSchema: {},
       annotations: READ_ONLY,
     },
-    async () => run(() => getClient().webhooks.list()),
+    async () => run(() => ctx.client.webhooks.list()),
   );
 
   server.registerTool(
@@ -43,7 +43,7 @@ export function registerWebhookTools(server: McpServer): void {
     },
     async (args) =>
       run(async () => {
-        await getClient().webhooks.delete(args.webhookId);
+        await ctx.client.webhooks.delete(args.webhookId);
         return { webhookId: args.webhookId, deleted: true };
       }),
   );
@@ -56,6 +56,6 @@ export function registerWebhookTools(server: McpServer): void {
       inputSchema: webhookIdShape,
       annotations: WRITE_SAFE,
     },
-    async (args) => run(() => getClient().webhooks.test(args.webhookId)),
+    async (args) => run(() => ctx.client.webhooks.test(args.webhookId)),
   );
 }

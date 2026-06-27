@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { ToolContext } from './client.js';
 import { registerSigningSessionTools } from './tools/signingSessions.js';
 import { registerEnvelopeTools } from './tools/envelopes.js';
 import { registerDocumentTools } from './tools/documents.js';
@@ -9,7 +10,7 @@ import { registerWebhookTools } from './tools/webhooks.js';
 import { registerResources } from './resources.js';
 
 export const SERVER_NAME = 'signdocs-brasil';
-export const SERVER_VERSION = '0.1.0';
+export const SERVER_VERSION = '0.2.0';
 
 const INSTRUCTIONS = `SignDocs Brasil electronic-signature API.
 
@@ -22,23 +23,24 @@ take real, quota-consuming, and often legally-binding actions — confirm with t
 human before invoking them. All other tools are read-only or non-binding.`;
 
 /**
- * Build a fully-wired MCP server. Transport-agnostic: the same instance is
- * mounted on stdio (bin/stdio.ts) today and on Streamable HTTP later
- * (http/server.ts).
+ * Build a fully-wired MCP server bound to a request/session-scoped
+ * {@link ToolContext}. Transport-agnostic: stdio (bin/stdio.ts) builds one
+ * context from env; the HTTP transport (http/server.ts) builds one per request
+ * so tenants stay isolated.
  */
-export function createServer(): McpServer {
+export function createServer(ctx: ToolContext): McpServer {
   const server = new McpServer(
     { name: SERVER_NAME, version: SERVER_VERSION },
     { instructions: INSTRUCTIONS },
   );
 
-  registerSigningSessionTools(server);
-  registerEnvelopeTools(server);
-  registerDocumentTools(server);
-  registerTransactionTools(server);
-  registerEvidenceTools(server);
-  registerVerifyTools(server);
-  registerWebhookTools(server);
+  registerSigningSessionTools(server, ctx);
+  registerEnvelopeTools(server, ctx);
+  registerDocumentTools(server, ctx);
+  registerTransactionTools(server, ctx);
+  registerEvidenceTools(server, ctx);
+  registerVerifyTools(server, ctx);
+  registerWebhookTools(server, ctx);
   registerResources(server);
 
   return server;

@@ -5,6 +5,8 @@ import {
   readEnv,
   buildSigningUrl,
   DEFAULT_SCOPES,
+  StaticTokenCache,
+  buildClient,
 } from '../src/client.js';
 
 describe('resolveEnvironment', () => {
@@ -65,5 +67,32 @@ describe('buildSigningUrl', () => {
     expect(buildSigningUrl('https://sign.example/s/abc', 'tok en/+1')).toBe(
       'https://sign.example/s/abc?cs=tok%20en%2F%2B1',
     );
+  });
+});
+
+describe('StaticTokenCache', () => {
+  it('returns the seeded token with a future expiry', () => {
+    const cache = new StaticTokenCache('abc.def.ghi');
+    const cached = cache.get();
+    expect(cached?.accessToken).toBe('abc.def.ghi');
+    expect(cached!.expiresAt).toBeGreaterThan(Date.now());
+  });
+  it('set/delete are no-ops (token stays fixed)', () => {
+    const cache = new StaticTokenCache('tok');
+    cache.set();
+    cache.delete();
+    expect(cache.get()?.accessToken).toBe('tok');
+  });
+});
+
+describe('buildClient', () => {
+  it('constructs a bearer-passthrough client exposing SDK resources', () => {
+    const c = buildClient({ mode: 'bearer', bearer: 'tok', environment: 'hml' });
+    expect(c.signingSessions).toBeDefined();
+    expect(c.verification).toBeDefined();
+  });
+  it('constructs a credentials client', () => {
+    const c = buildClient({ mode: 'credentials', clientId: 'id', clientSecret: 'sec', environment: 'production' });
+    expect(c.envelopes).toBeDefined();
   });
 });

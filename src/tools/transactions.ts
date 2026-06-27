@@ -1,11 +1,11 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { TransactionListParams, TransactionStatus } from '@signdocs-brasil/api';
-import { getClient } from '../client.js';
+import type { ToolContext } from '../client.js';
 import { CONFIRM_WARNING, DESTRUCTIVE, READ_ONLY } from '../annotations.js';
 import { run } from './helpers.js';
 import { listTransactionsShape, transactionIdShape } from '../schemas.js';
 
-export function registerTransactionTools(server: McpServer): void {
+export function registerTransactionTools(server: McpServer, ctx: ToolContext): void {
   server.registerTool(
     'list_transactions',
     {
@@ -26,7 +26,7 @@ export function registerTransactionTools(server: McpServer): void {
         ...(args.startDate ? { startDate: args.startDate } : {}),
         ...(args.endDate ? { endDate: args.endDate } : {}),
       };
-      return run(() => getClient().transactions.list(params));
+      return run(() => ctx.client.transactions.list(params));
     },
   );
 
@@ -38,7 +38,7 @@ export function registerTransactionTools(server: McpServer): void {
       inputSchema: transactionIdShape,
       annotations: READ_ONLY,
     },
-    async (args) => run(() => getClient().transactions.get(args.transactionId)),
+    async (args) => run(() => ctx.client.transactions.get(args.transactionId)),
   );
 
   server.registerTool(
@@ -49,6 +49,6 @@ export function registerTransactionTools(server: McpServer): void {
       inputSchema: transactionIdShape,
       annotations: DESTRUCTIVE,
     },
-    async (args) => run(() => getClient().transactions.cancel(args.transactionId)),
+    async (args) => run(() => ctx.client.transactions.cancel(args.transactionId)),
   );
 }

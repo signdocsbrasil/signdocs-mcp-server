@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createServer } from '../server.js';
+import { getStdioContext } from '../client.js';
 
 /**
  * stdio entrypoint. AI clients (Claude Desktop/Code, Cursor, …) launch this
@@ -8,7 +9,7 @@ import { createServer } from '../server.js';
  * the protocol channel; diagnostics go to stderr.
  */
 async function main(): Promise<void> {
-  const server = createServer();
+  const server = createServer(getStdioContext());
   const transport = new StdioServerTransport();
   await server.connect(transport);
   process.stderr.write('[signdocs-mcp] server started on stdio\n');

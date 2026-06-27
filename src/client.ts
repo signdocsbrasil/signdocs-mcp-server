@@ -1,4 +1,5 @@
 import { SignDocsBrasilClient } from '@signdocs-brasil/api';
+import type { TokenCache, CachedToken } from '@signdocs-brasil/api';
 
 /**
  * Thin wrapper that turns environment variables into a configured
@@ -101,4 +102,108 @@ export function resetClientCache(): void {
  */
 export function buildSigningUrl(url: string, clientSecret: string): string {
   return `${url}?cs=${encodeURIComponent(clientSecret)}`;
+}
+
+// ── Per-request client construction (used by the remote HTTP transport) ───────
+
+/**
+ * What every tool handler needs to talk to SignDocs. In the stdio server this
+ * is built once from env; in the remote HTTP server it is built per-request so
+ * each tenant is fully isolated (no shared client/token across requests).
+ */
+export interface ToolContext {
+  client: SignDocsBrasilClient;
+  environment: Environment;
+}
+
+/**
+ * A {@link TokenCache} pre-seeded with a caller-supplied access token. The SDK's
+ * AuthHandler checks the cache before exchanging credentials, so seeding it makes
+ * the SDK use the presented bearer directly and never call `/oauth2/token`.
+ * The SignDocs API remains the real validator — an invalid/expired token yields
+ * a 401 from the API, surfaced to the caller.
+ */
+export class StaticTokenCache implements TokenCache {
+  private readonly token: CachedToken;
+  constructor(accessToken: string, ttlMs = 60 * 60 * 1000) {
+    this.token = { accessToken, expiresAt: Date.now() + ttlMs };
+  }
+  get(): CachedToken | null {
+    return this.token;
+  }
+  set(): void {
+    /* no-op: the token is fixed for this request */
+  }
+  delete(): void {
+    /* no-op */
+  }
+}
+
+export type BuildClientOptions =
+  | {
+      mode: 'credentials';
+      clientId: string;
+      clientSecret: string;
+      environment: Environment;
+      baseUrlOverride?: string;
+      scopes?: string[];
+    }
+  | {
+      mode: 'bearer';
+      bearer: string;
+      environment: Environment;
+      baseUrlOverride?: string;
+      scopes?: string[];
+    };
+
+/**
+ * Build a fresh, request-scoped SDK client. `credentials` mode lets the SDK run
+ * the OAuth2 client_credentials exchange; `bearer` mode passes a pre-issued
+ * access token straight through via {@link StaticTokenCache}.
+ */
+export function buildClient(opts: BuildClientOptions): SignDocsBrasilClient {
+  const baseUrl = getBaseUrl(opts.environment, opts.baseUrlOverride);
+  const scopes = opts.scopes ?? DEFAULT_SCOPES;
+  if (opts.mode === 'bearer') {
+    return new SignDocsBrasilClient({
+      clientId: 'mcp-bearer-passthrough',
+      clientSecret: 'unused', // never used: the token cache short-circuits exchange
+      baseUrl,
+      scopes,
+      tokenCache: new StaticTokenCache(opts.bearer),
+    });
+  }
+  return new SignDocsBrasilClient({
+    clientId: opts.clientId,
+    clientSecret: opts.clientSecret,
+    baseUrl,
+    scopes,
+  });
+}
+
+/**
+ * A client proxy that defers construction until first use, so the stdio server
+ * can start and list tools/resources even with no credentials — a missing-cred
+ * error surfaces only when a tool actually calls the API.
+ */
+function lazyClient(factory: () => SignDocsBrasilClient): SignDocsBrasilClient {
+  let instance: SignDocsBrasilClient | undefined;
+  return new Proxy({} as SignDocsBrasilClient, {
+    get(_target, prop, receiver) {
+      instance ??= factory();
+      return Reflect.get(instance as object, prop, receiver);
+    },
+  });
+}
+
+/**
+ * Build the tool context for the stdio server from environment variables.
+ * Credentials are resolved lazily (on first API call); the environment is read
+ * eagerly but does not require credentials.
+ */
+export function getStdioContext(env: NodeJS.ProcessEnv = process.env): ToolContext {
+  return {
+    client: lazyClient(() => getClient(env)),
+    environment: resolveEnvironment(env.SIGNDOCS_ENVIRONMENT),
+  };
 }

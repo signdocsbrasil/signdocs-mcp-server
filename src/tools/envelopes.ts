@@ -1,11 +1,12 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CreateEnvelopeRequest, AddEnvelopeSessionRequest } from '@signdocs-brasil/api';
-import { getClient, buildSigningUrl } from '../client.js';
+import type { ToolContext } from '../client.js';
+import { buildSigningUrl } from '../client.js';
 import { CONFIRM_WARNING, DESTRUCTIVE, READ_ONLY } from '../annotations.js';
 import { run, idempotencyKey } from './helpers.js';
 import { createEnvelopeShape, envelopeIdShape, addEnvelopeSessionShape } from '../schemas.js';
 
-export function registerEnvelopeTools(server: McpServer): void {
+export function registerEnvelopeTools(server: McpServer, ctx: ToolContext): void {
   server.registerTool(
     'create_envelope',
     {
@@ -30,7 +31,7 @@ export function registerEnvelopeTools(server: McpServer): void {
           ...(args.expiresInMinutes ? { expiresInMinutes: args.expiresInMinutes } : {}),
           ...(args.owner ? { owner: args.owner } : {}),
         };
-        return getClient().envelopes.create(req, idempotencyKey(args.idempotencyKey));
+        return ctx.client.envelopes.create(req, idempotencyKey(args.idempotencyKey));
       }),
   );
 
@@ -42,7 +43,7 @@ export function registerEnvelopeTools(server: McpServer): void {
       inputSchema: envelopeIdShape,
       annotations: READ_ONLY,
     },
-    async (args) => run(() => getClient().envelopes.get(args.envelopeId)),
+    async (args) => run(() => ctx.client.envelopes.get(args.envelopeId)),
   );
 
   server.registerTool(
@@ -66,7 +67,7 @@ export function registerEnvelopeTools(server: McpServer): void {
           ...(args.cancelUrl ? { cancelUrl: args.cancelUrl } : {}),
           ...(args.metadata ? { metadata: args.metadata } : {}),
         };
-        const session = await getClient().envelopes.addSession(args.envelopeId, req);
+        const session = await ctx.client.envelopes.addSession(args.envelopeId, req);
         return { ...session, signingUrl: buildSigningUrl(session.url, session.clientSecret) };
       }),
   );
@@ -80,6 +81,6 @@ export function registerEnvelopeTools(server: McpServer): void {
       inputSchema: envelopeIdShape,
       annotations: READ_ONLY,
     },
-    async (args) => run(() => getClient().envelopes.combinedStamp(args.envelopeId)),
+    async (args) => run(() => ctx.client.envelopes.combinedStamp(args.envelopeId)),
   );
 }

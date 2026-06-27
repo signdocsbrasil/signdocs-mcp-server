@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CreateSigningSessionRequest } from '@signdocs-brasil/api';
-import { getClient, buildSigningUrl } from '../client.js';
+import type { ToolContext } from '../client.js';
+import { buildSigningUrl } from '../client.js';
 import { CONFIRM_WARNING, DESTRUCTIVE, READ_ONLY, WRITE_SAFE } from '../annotations.js';
 import { run, idempotencyKey } from './helpers.js';
 import {
@@ -10,7 +11,7 @@ import {
   resendOtpShape,
 } from '../schemas.js';
 
-export function registerSigningSessionTools(server: McpServer): void {
+export function registerSigningSessionTools(server: McpServer, ctx: ToolContext): void {
   server.registerTool(
     'create_signing_session',
     {
@@ -42,7 +43,7 @@ export function registerSigningSessionTools(server: McpServer): void {
           ...(args.expiresInMinutes ? { expiresInMinutes: args.expiresInMinutes } : {}),
           ...(args.owner ? { owner: args.owner } : {}),
         };
-        const session = await getClient().signingSessions.create(req, idempotencyKey(args.idempotencyKey));
+        const session = await ctx.client.signingSessions.create(req, idempotencyKey(args.idempotencyKey));
         return { ...session, signingUrl: buildSigningUrl(session.url, session.clientSecret) };
       }),
   );
@@ -55,7 +56,7 @@ export function registerSigningSessionTools(server: McpServer): void {
       inputSchema: sessionIdShape,
       annotations: READ_ONLY,
     },
-    async (args) => run(() => getClient().signingSessions.getStatus(args.sessionId)),
+    async (args) => run(() => ctx.client.signingSessions.getStatus(args.sessionId)),
   );
 
   server.registerTool(
@@ -66,7 +67,7 @@ export function registerSigningSessionTools(server: McpServer): void {
       inputSchema: sessionIdShape,
       annotations: READ_ONLY,
     },
-    async (args) => run(() => getClient().signingSessions.get(args.sessionId)),
+    async (args) => run(() => ctx.client.signingSessions.get(args.sessionId)),
   );
 
   server.registerTool(
@@ -79,7 +80,7 @@ export function registerSigningSessionTools(server: McpServer): void {
     },
     async (args) =>
       run(() =>
-        getClient().signingSessions.list({
+        ctx.client.signingSessions.list({
           status: args.status,
           ...(args.limit !== undefined ? { limit: args.limit } : {}),
           ...(args.cursor ? { cursor: args.cursor } : {}),
@@ -95,7 +96,7 @@ export function registerSigningSessionTools(server: McpServer): void {
       inputSchema: sessionIdShape,
       annotations: DESTRUCTIVE,
     },
-    async (args) => run(() => getClient().signingSessions.cancel(args.sessionId)),
+    async (args) => run(() => ctx.client.signingSessions.cancel(args.sessionId)),
   );
 
   server.registerTool(
@@ -108,7 +109,7 @@ export function registerSigningSessionTools(server: McpServer): void {
     },
     async (args) =>
       run(() =>
-        getClient().signingSessions.resendOtp(args.sessionId, args.channel ? { channel: args.channel } : undefined),
+        ctx.client.signingSessions.resendOtp(args.sessionId, args.channel ? { channel: args.channel } : undefined),
       ),
   );
 }

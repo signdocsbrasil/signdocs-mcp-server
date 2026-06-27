@@ -1,10 +1,10 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getClient } from '../client.js';
+import type { ToolContext } from '../client.js';
 import { READ_ONLY } from '../annotations.js';
 import { run } from './helpers.js';
 import { transactionIdShape } from '../schemas.js';
 
-export function registerEvidenceTools(server: McpServer): void {
+export function registerEvidenceTools(server: McpServer, ctx: ToolContext): void {
   server.registerTool(
     'get_evidence',
     {
@@ -14,6 +14,6 @@ export function registerEvidenceTools(server: McpServer): void {
       inputSchema: transactionIdShape,
       annotations: READ_ONLY,
     },
-    async (args) => run(() => getClient().evidence.get(args.transactionId)),
+    async (args) => run(() => ctx.client.evidence.get(args.transactionId)),
   );
 }

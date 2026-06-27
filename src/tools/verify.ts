@@ -1,10 +1,10 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { getClient, getResolvedEnv } from '../client.js';
+import type { ToolContext } from '../client.js';
 import { CONFIRM_WARNING, DESTRUCTIVE, READ_ONLY } from '../annotations.js';
 import { run, errorContent } from './helpers.js';
 import { verifyEvidenceShape, verifyEnvelopeShape, verifyDocumentShape } from '../schemas.js';
 
-export function registerVerifyTools(server: McpServer): void {
+export function registerVerifyTools(server: McpServer, ctx: ToolContext): void {
   server.registerTool(
     'verify_evidence',
     {
@@ -15,7 +15,7 @@ export function registerVerifyTools(server: McpServer): void {
       inputSchema: verifyEvidenceShape,
       annotations: READ_ONLY,
     },
-    async (args) => run(() => getClient().verification.verify(args.evidenceId)),
+    async (args) => run(() => ctx.client.verification.verify(args.evidenceId)),
   );
 
   server.registerTool(
@@ -26,7 +26,7 @@ export function registerVerifyTools(server: McpServer): void {
       inputSchema: verifyEnvelopeShape,
       annotations: READ_ONLY,
     },
-    async (args) => run(() => getClient().verification.verifyEnvelope(args.envelopeId)),
+    async (args) => run(() => ctx.client.verification.verifyEnvelope(args.envelopeId)),
   );
 
   server.registerTool(
@@ -42,8 +42,7 @@ export function registerVerifyTools(server: McpServer): void {
       annotations: DESTRUCTIVE,
     },
     async (args) => {
-      const env = getResolvedEnv();
-      if (env.environment !== 'production') {
+      if (ctx.environment !== 'production') {
         return errorContent(
           new Error(
             'verify_document is PRODUCTION-only — the signature-detection backend is not provisioned in HML. ' +
@@ -52,7 +51,7 @@ export function registerVerifyTools(server: McpServer): void {
         );
       }
       return run(() =>
-        getClient().verification.verifyDocument({
+        ctx.client.verification.verifyDocument({
           content: args.documentBase64,
           ...(args.filename ? { filename: args.filename } : {}),
         }),
