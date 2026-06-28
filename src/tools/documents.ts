@@ -15,9 +15,9 @@ export function registerDocumentTools(server: McpServer, ctx: ToolContext): void
     },
     async (args) =>
       run(async () => {
-        const document = await resolveDocument(args);
+        const document = await resolveDocument(args, ctx);
         if (!document) {
-          throw new Error('Provide documentBase64 or documentUrl to upload.');
+          throw new Error('Provide documentBase64, documentUrl, or uploadToken to upload.');
         }
         return ctx.client.documents.upload(args.transactionId, document);
       }),

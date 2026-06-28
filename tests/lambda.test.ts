@@ -96,7 +96,7 @@ describe('createLambdaHandler — via real MCP client over a bridge', () => {
     });
     await client.connect(transport);
     const tools = await client.listTools();
-    expect(tools.tools.length).toBe(23);
+    expect(tools.tools.length).toBe(24);
     expect(tools.tools.map((t) => t.name)).toContain('create_signing_session');
     await client.close();
   });

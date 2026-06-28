@@ -4,6 +4,7 @@ import {
   DEFAULT_SCOPES,
   type Environment,
   type ToolContext,
+  type ContextHooks,
 } from '../client.js';
 
 /**
@@ -72,17 +73,23 @@ export function environmentFromHeaders(headers: HeaderMap, fallback: Environment
   return fallback;
 }
 
-/** Build a request-scoped tool context (fresh SDK client) from parsed auth. */
+/** Build a request-scoped tool context (fresh SDK client) from parsed auth + host hooks. */
 export function buildContextForAuth(
   auth: AuthResult,
   environment: Environment,
-  shortenUrl?: (url: string) => Promise<string>,
+  hooks: ContextHooks = {},
 ): ToolContext {
   const client =
     auth.mode === 'bearer'
       ? buildClient({ mode: 'bearer', bearer: auth.bearer, environment })
       : buildClient({ mode: 'credentials', clientId: auth.clientId, clientSecret: auth.clientSecret, environment });
-  return { client, environment, ...(shortenUrl ? { shortenUrl } : {}) };
+  return {
+    client,
+    environment,
+    ...(hooks.shortenUrl ? { shortenUrl: hooks.shortenUrl } : {}),
+    ...(hooks.createUpload ? { createUpload: hooks.createUpload } : {}),
+    ...(hooks.resolveUpload ? { resolveUpload: hooks.resolveUpload } : {}),
+  };
 }
 
 /**

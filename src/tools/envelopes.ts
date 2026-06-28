@@ -20,9 +20,9 @@ export function registerEnvelopeTools(server: McpServer, ctx: ToolContext): void
     },
     async (args) =>
       run(async () => {
-        const document = await resolveDocument(args);
+        const document = await resolveDocument(args, ctx);
         if (!document) {
-          throw new Error('An envelope requires a document — provide documentBase64 or documentUrl.');
+          throw new Error('An envelope requires a document — provide documentBase64, documentUrl, or uploadToken.');
         }
         const req: CreateEnvelopeRequest = {
           signingMode: args.signingMode,

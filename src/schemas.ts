@@ -65,7 +65,11 @@ export const createSigningSessionShape = {
     .string()
     .url()
     .optional()
-    .describe('HTTPS link to the PDF (≤10MB) — the server fetches it. Use this for a PDF that lives in Drive/Dropbox/S3/any shareable link, since attached files are not passed to tools. Provide this OR documentBase64.'),
+    .describe('Direct, public HTTPS link to the PDF (≤10MB) — the server fetches it. Must return raw PDF bytes (S3/Dropbox ?dl=1/public .pdf). NOTE: a Google Drive "/view" link or a private file will NOT work.'),
+  uploadToken: z
+    .string()
+    .optional()
+    .describe('Token from request_document_upload, after the user uploaded the PDF on the drag-and-drop page. Best for local files or private Google Drive files (download then drag in). Provide one of documentBase64 / documentUrl / uploadToken.'),
   documentFilename: z.string().optional().describe('Original filename, e.g. contrato.pdf.'),
   action: z
     .object({
@@ -106,8 +110,9 @@ export const resendOtpShape = {
 export const createEnvelopeShape = {
   signingMode: z.enum(['PARALLEL', 'SEQUENTIAL']).describe('PARALLEL: anyone signs in any order. SEQUENTIAL: ordered.'),
   totalSigners: z.number().int().min(1).describe('How many signers will be added to this envelope.'),
-  documentBase64: z.string().optional().describe('Base64-encoded PDF (≤10MB) shared by all signers. Provide this OR documentUrl.'),
-  documentUrl: z.string().url().optional().describe('HTTPS link to the shared PDF (≤10MB) — the server fetches it. Provide this OR documentBase64.'),
+  documentBase64: z.string().optional().describe('Base64-encoded PDF (≤10MB) shared by all signers.'),
+  documentUrl: z.string().url().optional().describe('Direct, public HTTPS link to the shared PDF (≤10MB) — server fetches it (not a Google Drive /view or private link).'),
+  uploadToken: z.string().optional().describe('Token from request_document_upload after the user uploaded the PDF. Provide one of documentBase64 / documentUrl / uploadToken.'),
   documentFilename: z.string().optional(),
   metadata,
   locale: LOCALE.optional(),
@@ -137,9 +142,15 @@ export const addEnvelopeSessionShape = {
 
 export const uploadDocumentShape = {
   transactionId: z.string().describe('Transaction to attach the document to (txn_…).'),
-  documentBase64: z.string().optional().describe('Base64-encoded PDF (≤10MB). Provide this OR documentUrl.'),
-  documentUrl: z.string().url().optional().describe('HTTPS link to the PDF (≤10MB) — the server fetches it. Provide this OR documentBase64.'),
+  documentBase64: z.string().optional().describe('Base64-encoded PDF (≤10MB).'),
+  documentUrl: z.string().url().optional().describe('Direct, public HTTPS link to the PDF (≤10MB) — server fetches it (not a Google Drive /view or private link).'),
+  uploadToken: z.string().optional().describe('Token from request_document_upload after the user uploaded the PDF. Provide one of documentBase64 / documentUrl / uploadToken.'),
   filename: z.string().optional(),
+};
+
+/** request_document_upload input. */
+export const requestUploadShape = {
+  filename: z.string().optional().describe('Suggested filename for the upload, e.g. contrato.pdf.'),
 };
 
 export const transactionIdShape = {

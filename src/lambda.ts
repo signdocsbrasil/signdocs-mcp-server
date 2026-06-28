@@ -57,6 +57,9 @@ export interface LambdaHandlerOptions {
    * The host supplies a store-backed implementation; without it, URLs pass through.
    */
   shortenUrl?: (url: string) => Promise<string>;
+  /** Optional upload hooks (see ToolContext.createUpload / resolveUpload). */
+  createUpload?: (opts: { filename?: string }) => Promise<{ uploadToken: string; uploadPageUrl: string }>;
+  resolveUpload?: (token: string) => Promise<{ content: string; filename?: string }>;
 }
 
 const CORS_ALLOW_HEADERS =
@@ -125,7 +128,11 @@ export function createLambdaHandler(options: LambdaHandlerOptions = {}): LambdaH
     }
 
     const environment = environmentFromHeaders(headers, defaultEnvironment);
-    const ctx = buildContextForAuth(auth, environment, options.shortenUrl);
+    const ctx = buildContextForAuth(auth, environment, {
+      shortenUrl: options.shortenUrl,
+      createUpload: options.createUpload,
+      resolveUpload: options.resolveUpload,
+    });
     const server = createMcpServer(ctx);
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,

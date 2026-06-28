@@ -121,6 +121,25 @@ export interface ToolContext {
    * adapter, backed by a store + a /d/{id} redirect). Undefined ⇒ URLs unchanged.
    */
   shortenUrl?: (url: string) => Promise<string>;
+  /**
+   * Optional hook backing the `request_document_upload` tool: returns a one-time
+   * drag-and-drop upload page URL the user opens to upload a PDF (browser→S3),
+   * plus the token to reference it. Lets users sign a local/Drive file without
+   * passing bytes through the model. Undefined ⇒ the upload tool is unavailable.
+   */
+  createUpload?: (opts: { filename?: string }) => Promise<{ uploadToken: string; uploadPageUrl: string }>;
+  /**
+   * Optional hook to resolve an `uploadToken` (from createUpload) to the staged
+   * PDF as base64. Used by create_signing_session/create_envelope/upload_document.
+   */
+  resolveUpload?: (token: string) => Promise<{ content: string; filename?: string }>;
+}
+
+/** Hooks the hosting layer can inject into a tool context. */
+export interface ContextHooks {
+  shortenUrl?: ToolContext['shortenUrl'];
+  createUpload?: ToolContext['createUpload'];
+  resolveUpload?: ToolContext['resolveUpload'];
 }
 
 /**

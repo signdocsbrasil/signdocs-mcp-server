@@ -7,10 +7,11 @@ import { registerTransactionTools } from './tools/transactions.js';
 import { registerEvidenceTools } from './tools/evidence.js';
 import { registerVerifyTools } from './tools/verify.js';
 import { registerWebhookTools } from './tools/webhooks.js';
+import { registerUploadTools } from './tools/uploads.js';
 import { registerResources } from './resources.js';
 
 export const SERVER_NAME = 'signdocs-brasil';
-export const SERVER_VERSION = '0.6.0';
+export const SERVER_VERSION = '0.7.0';
 
 const INSTRUCTIONS = `SignDocs Brasil electronic-signature API.
 
@@ -41,6 +42,7 @@ export function createServer(ctx: ToolContext): McpServer {
   registerEvidenceTools(server, ctx);
   registerVerifyTools(server, ctx);
   registerWebhookTools(server, ctx);
+  registerUploadTools(server, ctx);
   registerResources(server);
 
   return server;

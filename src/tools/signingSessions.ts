@@ -25,7 +25,7 @@ export function registerSigningSessionTools(server: McpServer, ctx: ToolContext)
     },
     async (args) =>
       run(async () => {
-        const document = await resolveDocument(args);
+        const document = await resolveDocument(args, ctx);
         const req: CreateSigningSessionRequest = {
           purpose: args.purpose,
           policy: {

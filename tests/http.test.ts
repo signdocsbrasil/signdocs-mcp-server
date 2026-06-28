@@ -69,7 +69,7 @@ describe('authenticated MCP session', () => {
     await client.connect(transport);
 
     const tools = await client.listTools();
-    expect(tools.tools.length).toBe(23);
+    expect(tools.tools.length).toBe(24);
     expect(tools.tools.map((t) => t.name)).toContain('create_signing_session');
 
     const res = await client.listResources();

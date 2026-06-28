@@ -6,15 +6,27 @@ import { fetchDocumentAsBase64 } from '../fetch-document.js';
  * Returns the SignDocs `{ content, filename }` shape, or undefined if neither
  * was provided (signing sessions allow no document for ACTION_AUTHENTICATION).
  */
-export async function resolveDocument(args: {
-  documentBase64?: string;
-  documentUrl?: string;
-  documentFilename?: string;
-  filename?: string;
-}): Promise<{ content: string; filename?: string } | undefined> {
+export async function resolveDocument(
+  args: {
+    documentBase64?: string;
+    documentUrl?: string;
+    uploadToken?: string;
+    documentFilename?: string;
+    filename?: string;
+  },
+  ctx?: { resolveUpload?: (token: string) => Promise<{ content: string; filename?: string }> },
+): Promise<{ content: string; filename?: string } | undefined> {
   const fname = args.documentFilename ?? args.filename;
   if (args.documentBase64) {
     return { content: args.documentBase64, ...(fname ? { filename: fname } : {}) };
+  }
+  if (args.uploadToken) {
+    if (!ctx?.resolveUpload) {
+      throw new Error('uploadToken is not supported on this server.');
+    }
+    const u = await ctx.resolveUpload(args.uploadToken);
+    const filename = fname ?? u.filename;
+    return { content: u.content, ...(filename ? { filename } : {}) };
   }
   if (args.documentUrl) {
     const fetched = await fetchDocumentAsBase64(args.documentUrl);
