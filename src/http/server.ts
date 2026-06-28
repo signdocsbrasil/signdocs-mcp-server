@@ -87,7 +87,7 @@ function publicBase(req: IncomingMessage, opts: ResolvedOptions): string {
 }
 
 function challenge(req: IncomingMessage, res: ServerResponse, opts: ResolvedOptions): void {
-  res.setHeader('WWW-Authenticate', wwwAuthenticate(`${publicBase(req, opts)}/.well-known/oauth-protected-resource`));
+  res.setHeader('WWW-Authenticate', wwwAuthenticate(`${publicBase(req, opts)}/.well-known/oauth-protected-resource/mcp`));
   sendJson(res, 401, UNAUTHORIZED_BODY);
 }
 
@@ -197,7 +197,10 @@ async function handle(
     sendJson(res, 200, { status: 'ok', transport: 'streamable-http', sessions: sessions.size });
     return;
   }
-  if (method === 'GET' && path === '/.well-known/oauth-protected-resource') {
+  if (
+    method === 'GET' &&
+    (path === '/.well-known/oauth-protected-resource/mcp' || path === '/.well-known/oauth-protected-resource')
+  ) {
     sendJson(res, 200, buildProtectedResourceMetadata(`${publicBase(req, opts)}/mcp`, opts.defaultEnvironment));
     return;
   }

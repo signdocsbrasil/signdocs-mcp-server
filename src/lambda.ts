@@ -96,7 +96,10 @@ export function createLambdaHandler(options: LambdaHandlerOptions = {}): LambdaH
   return async (event: ApiGatewayV2Event): Promise<ApiGatewayV2Result> => {
     const headers = lowercaseHeaders(event.headers ?? {});
     const method = (event.requestContext?.http?.method ?? 'POST').toUpperCase();
-    const resourceUrl = `${baseOrigin(headers, options)}/mcp`;
+    const base = baseOrigin(headers, options);
+    const resourceUrl = `${base}/mcp`;
+    // RFC 9728: protected-resource metadata for resource /mcp lives at this path.
+    const metadataUrl = `${base}/.well-known/oauth-protected-resource/mcp`;
     const cors = corsHeaders(corsOrigin);
 
     if (method === 'OPTIONS') return { statusCode: 204, headers: cors };
@@ -105,7 +108,7 @@ export function createLambdaHandler(options: LambdaHandlerOptions = {}): LambdaH
 
     const auth = extractAuthFromHeaders(headers);
     if (!auth) {
-      return json(401, UNAUTHORIZED_BODY, { ...cors, 'WWW-Authenticate': wwwAuthenticate(resourceUrl) });
+      return json(401, UNAUTHORIZED_BODY, { ...cors, 'WWW-Authenticate': wwwAuthenticate(metadataUrl) });
     }
 
     const rawBody = event.body ? Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf8') : undefined;

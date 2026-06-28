@@ -25,7 +25,7 @@ describe('createLambdaHandler — direct invocation', () => {
     expect(r.statusCode).toBe(200);
     const body = JSON.parse(r.body!);
     expect(body.resource).toBe('https://mcp.example/mcp');
-    expect(body.authorization_servers).toContain('https://api-hml.signdocs.com.br');
+    expect(body.authorization_servers).toContain('https://auth-hml.signdocs.com.br');
   });
 
   it('POST without auth returns 401 + WWW-Authenticate', async () => {

@@ -33,7 +33,7 @@ describe('health + discovery', () => {
     expect(r.status).toBe(200);
     const body = await r.json();
     expect(body.resource).toBe(`${base}/mcp`);
-    expect(body.authorization_servers).toContain('https://api-hml.signdocs.com.br');
+    expect(body.authorization_servers).toContain('https://auth-hml.signdocs.com.br');
     expect(body.scopes_supported).toContain('transactions:write');
   });
 });

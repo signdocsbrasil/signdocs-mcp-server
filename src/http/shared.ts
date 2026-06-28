@@ -1,6 +1,5 @@
 import {
   buildClient,
-  getBaseUrl,
   resolveEnvironment,
   DEFAULT_SCOPES,
   type Environment,
@@ -82,11 +81,23 @@ export function buildContextForAuth(auth: AuthResult, environment: Environment):
   return { client, environment };
 }
 
+/**
+ * The SignDocs OAuth authorization server for the given environment. This is the
+ * dedicated AS that implements authorization_code + PKCE + DCR (SigExtOAuth), so
+ * Claude.ai web can run interactive OAuth. (Direct client_credentials/Basic/Bearer
+ * still work too — they bypass this discovery path.)
+ */
+export function authorizationServerUrl(environment: Environment): string {
+  return environment === 'production'
+    ? 'https://auth.signdocs.com.br'
+    : 'https://auth-hml.signdocs.com.br';
+}
+
 /** RFC 9728 protected-resource metadata pointing at the SignDocs authorization server. */
 export function protectedResourceMetadata(resourceUrl: string, environment: Environment): Record<string, unknown> {
   return {
     resource: resourceUrl,
-    authorization_servers: [getBaseUrl(environment)],
+    authorization_servers: [authorizationServerUrl(environment)],
     scopes_supported: DEFAULT_SCOPES,
     bearer_methods_supported: ['header'],
   };
