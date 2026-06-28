@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.signdocsbrasil/mcp-server",
-  "description": "SignDocs Brasil e-signature tools for AI agents — create signing sessions, manage multi-signer envelopes, and verify documents (ICP-Brasil, MP 2.200-2).",
-  "version": "0.3.1",
+  "name": "br.com.signdocs/mcp-server",
+  "description": "SignDocs Brasil e-signature tools for AI agents — signing sessions, envelopes, verification.",
+  "version": "0.3.2",
   "websiteUrl": "https://www.signdocs.com.br/integracao-claude-ia-mcp.html",
   "repository": {
     "url": "https://github.com/signdocsbrasil/signdocs-mcp-server",
@@ -13,7 +13,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@signdocs-brasil/mcp-server",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "runtimeHint": "npx",
       "transport": { "type": "stdio" },
       "environmentVariables": [

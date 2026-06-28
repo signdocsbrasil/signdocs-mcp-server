@@ -10,7 +10,7 @@ import { registerWebhookTools } from './tools/webhooks.js';
 import { registerResources } from './resources.js';
 
 export const SERVER_NAME = 'signdocs-brasil';
-export const SERVER_VERSION = '0.3.1';
+export const SERVER_VERSION = '0.3.2';
 
 const INSTRUCTIONS = `SignDocs Brasil electronic-signature API.
 
