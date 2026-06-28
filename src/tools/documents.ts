@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ToolContext } from '../client.js';
 import { READ_ONLY, WRITE_SAFE } from '../annotations.js';
-import { run } from './helpers.js';
+import { run, resolveDocument } from './helpers.js';
 import { uploadDocumentShape, transactionIdShape } from '../schemas.js';
 
 export function registerDocumentTools(server: McpServer, ctx: ToolContext): void {
@@ -14,12 +14,13 @@ export function registerDocumentTools(server: McpServer, ctx: ToolContext): void
       annotations: WRITE_SAFE,
     },
     async (args) =>
-      run(() =>
-        ctx.client.documents.upload(args.transactionId, {
-          content: args.documentBase64,
-          ...(args.filename ? { filename: args.filename } : {}),
-        }),
-      ),
+      run(async () => {
+        const document = await resolveDocument(args);
+        if (!document) {
+          throw new Error('Provide documentBase64 or documentUrl to upload.');
+        }
+        return ctx.client.documents.upload(args.transactionId, document);
+      }),
   );
 
   server.registerTool(

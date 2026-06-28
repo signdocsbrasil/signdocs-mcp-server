@@ -1,4 +1,28 @@
 import { randomUUID } from 'node:crypto';
+import { fetchDocumentAsBase64 } from '../fetch-document.js';
+
+/**
+ * Resolve a document from either inline base64 or a server-fetched URL.
+ * Returns the SignDocs `{ content, filename }` shape, or undefined if neither
+ * was provided (signing sessions allow no document for ACTION_AUTHENTICATION).
+ */
+export async function resolveDocument(args: {
+  documentBase64?: string;
+  documentUrl?: string;
+  documentFilename?: string;
+  filename?: string;
+}): Promise<{ content: string; filename?: string } | undefined> {
+  const fname = args.documentFilename ?? args.filename;
+  if (args.documentBase64) {
+    return { content: args.documentBase64, ...(fname ? { filename: fname } : {}) };
+  }
+  if (args.documentUrl) {
+    const fetched = await fetchDocumentAsBase64(args.documentUrl);
+    const filename = fname ?? fetched.filename;
+    return { content: fetched.content, ...(filename ? { filename } : {}) };
+  }
+  return undefined;
+}
 
 /** MCP tool result shape (subset we use). Index signature matches the SDK's CallToolResult. */
 export interface ToolResult {

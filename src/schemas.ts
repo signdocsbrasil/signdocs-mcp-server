@@ -60,7 +60,12 @@ export const createSigningSessionShape = {
   documentBase64: z
     .string()
     .optional()
-    .describe('Base64-encoded PDF (≤10MB). Required when purpose=DOCUMENT_SIGNATURE.'),
+    .describe('Base64-encoded PDF (≤10MB). Provide this OR documentUrl when purpose=DOCUMENT_SIGNATURE.'),
+  documentUrl: z
+    .string()
+    .url()
+    .optional()
+    .describe('HTTPS link to the PDF (≤10MB) — the server fetches it. Use this for a PDF that lives in Drive/Dropbox/S3/any shareable link, since attached files are not passed to tools. Provide this OR documentBase64.'),
   documentFilename: z.string().optional().describe('Original filename, e.g. contrato.pdf.'),
   action: z
     .object({
@@ -101,7 +106,8 @@ export const resendOtpShape = {
 export const createEnvelopeShape = {
   signingMode: z.enum(['PARALLEL', 'SEQUENTIAL']).describe('PARALLEL: anyone signs in any order. SEQUENTIAL: ordered.'),
   totalSigners: z.number().int().min(1).describe('How many signers will be added to this envelope.'),
-  documentBase64: z.string().describe('Base64-encoded PDF (≤10MB) shared by all signers.'),
+  documentBase64: z.string().optional().describe('Base64-encoded PDF (≤10MB) shared by all signers. Provide this OR documentUrl.'),
+  documentUrl: z.string().url().optional().describe('HTTPS link to the shared PDF (≤10MB) — the server fetches it. Provide this OR documentBase64.'),
   documentFilename: z.string().optional(),
   metadata,
   locale: LOCALE.optional(),
@@ -131,7 +137,8 @@ export const addEnvelopeSessionShape = {
 
 export const uploadDocumentShape = {
   transactionId: z.string().describe('Transaction to attach the document to (txn_…).'),
-  documentBase64: z.string().describe('Base64-encoded PDF (≤10MB).'),
+  documentBase64: z.string().optional().describe('Base64-encoded PDF (≤10MB). Provide this OR documentUrl.'),
+  documentUrl: z.string().url().optional().describe('HTTPS link to the PDF (≤10MB) — the server fetches it. Provide this OR documentBase64.'),
   filename: z.string().optional(),
 };
 

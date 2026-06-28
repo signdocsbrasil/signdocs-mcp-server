@@ -3,7 +3,7 @@ import type { CreateEnvelopeRequest, AddEnvelopeSessionRequest } from '@signdocs
 import type { ToolContext } from '../client.js';
 import { buildSigningUrl } from '../client.js';
 import { CONFIRM_WARNING, DESTRUCTIVE, READ_ONLY } from '../annotations.js';
-import { run, idempotencyKey } from './helpers.js';
+import { run, idempotencyKey, resolveDocument } from './helpers.js';
 import { createEnvelopeShape, envelopeIdShape, addEnvelopeSessionShape } from '../schemas.js';
 
 export function registerEnvelopeTools(server: McpServer, ctx: ToolContext): void {
@@ -19,11 +19,15 @@ export function registerEnvelopeTools(server: McpServer, ctx: ToolContext): void
       annotations: DESTRUCTIVE,
     },
     async (args) =>
-      run(() => {
+      run(async () => {
+        const document = await resolveDocument(args);
+        if (!document) {
+          throw new Error('An envelope requires a document — provide documentBase64 or documentUrl.');
+        }
         const req: CreateEnvelopeRequest = {
           signingMode: args.signingMode,
           totalSigners: args.totalSigners,
-          document: { content: args.documentBase64, filename: args.documentFilename },
+          document,
           ...(args.metadata ? { metadata: args.metadata } : {}),
           ...(args.locale ? { locale: args.locale } : {}),
           ...(args.returnUrl ? { returnUrl: args.returnUrl } : {}),

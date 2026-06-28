@@ -3,7 +3,7 @@ import type { CreateSigningSessionRequest } from '@signdocs-brasil/api';
 import type { ToolContext } from '../client.js';
 import { buildSigningUrl } from '../client.js';
 import { CONFIRM_WARNING, DESTRUCTIVE, READ_ONLY, WRITE_SAFE } from '../annotations.js';
-import { run, idempotencyKey } from './helpers.js';
+import { run, idempotencyKey, resolveDocument } from './helpers.js';
 import {
   createSigningSessionShape,
   sessionIdShape,
@@ -25,6 +25,7 @@ export function registerSigningSessionTools(server: McpServer, ctx: ToolContext)
     },
     async (args) =>
       run(async () => {
+        const document = await resolveDocument(args);
         const req: CreateSigningSessionRequest = {
           purpose: args.purpose,
           policy: {
@@ -32,9 +33,7 @@ export function registerSigningSessionTools(server: McpServer, ctx: ToolContext)
             ...(args.customSteps ? { customSteps: args.customSteps } : {}),
           },
           signer: args.signer,
-          ...(args.documentBase64
-            ? { document: { content: args.documentBase64, filename: args.documentFilename } }
-            : {}),
+          ...(document ? { document } : {}),
           ...(args.action ? { action: args.action } : {}),
           ...(args.returnUrl ? { returnUrl: args.returnUrl } : {}),
           ...(args.cancelUrl ? { cancelUrl: args.cancelUrl } : {}),
