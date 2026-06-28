@@ -1,6 +1,6 @@
 {
   "name": "@signdocs-brasil/mcp-server",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "mcpName": "br.com.signdocs/mcp-server",
   "description": "Model Context Protocol (MCP) server for the SignDocs Brasil e-signature API — lets AI agents create signing sessions, manage envelopes, verify documents and more. Local stdio, remote HTTP, and AWS Lambda transports.",
   "license": "MIT",

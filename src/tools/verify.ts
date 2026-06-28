@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ToolContext } from '../client.js';
 import { CONFIRM_WARNING, DESTRUCTIVE, READ_ONLY } from '../annotations.js';
-import { run, errorContent } from './helpers.js';
+import { run, runWithLinks, errorContent } from './helpers.js';
 import { verifyEvidenceShape, verifyEnvelopeShape, verifyDocumentShape } from '../schemas.js';
 
 export function registerVerifyTools(server: McpServer, ctx: ToolContext): void {
@@ -15,7 +15,7 @@ export function registerVerifyTools(server: McpServer, ctx: ToolContext): void {
       inputSchema: verifyEvidenceShape,
       annotations: READ_ONLY,
     },
-    async (args) => run(() => ctx.client.verification.verify(args.evidenceId)),
+    async (args) => runWithLinks(ctx, () => ctx.client.verification.verify(args.evidenceId)),
   );
 
   server.registerTool(
@@ -26,7 +26,7 @@ export function registerVerifyTools(server: McpServer, ctx: ToolContext): void {
       inputSchema: verifyEnvelopeShape,
       annotations: READ_ONLY,
     },
-    async (args) => run(() => ctx.client.verification.verifyEnvelope(args.envelopeId)),
+    async (args) => runWithLinks(ctx, () => ctx.client.verification.verifyEnvelope(args.envelopeId)),
   );
 
   server.registerTool(

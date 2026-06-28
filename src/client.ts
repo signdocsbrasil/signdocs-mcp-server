@@ -114,6 +114,13 @@ export function buildSigningUrl(url: string, clientSecret: string): string {
 export interface ToolContext {
   client: SignDocsBrasilClient;
   environment: Environment;
+  /**
+   * Optional hook to turn a long presigned download URL into a short, stable link
+   * the model can reproduce verbatim (LLMs garble ~2KB signed-URL tokens when
+   * re-emitting them as links). Injected by the hosting layer (e.g. the Lambda
+   * adapter, backed by a store + a /d/{id} redirect). Undefined ⇒ URLs unchanged.
+   */
+  shortenUrl?: (url: string) => Promise<string>;
 }
 
 /**

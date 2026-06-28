@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ToolContext } from '../client.js';
 import { READ_ONLY, WRITE_SAFE } from '../annotations.js';
-import { run, resolveDocument } from './helpers.js';
+import { run, runWithLinks, resolveDocument } from './helpers.js';
 import { uploadDocumentShape, transactionIdShape } from '../schemas.js';
 
 export function registerDocumentTools(server: McpServer, ctx: ToolContext): void {
@@ -31,6 +31,6 @@ export function registerDocumentTools(server: McpServer, ctx: ToolContext): void
       inputSchema: transactionIdShape,
       annotations: READ_ONLY,
     },
-    async (args) => run(() => ctx.client.documents.download(args.transactionId)),
+    async (args) => runWithLinks(ctx, () => ctx.client.documents.download(args.transactionId)),
   );
 }

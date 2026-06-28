@@ -73,12 +73,16 @@ export function environmentFromHeaders(headers: HeaderMap, fallback: Environment
 }
 
 /** Build a request-scoped tool context (fresh SDK client) from parsed auth. */
-export function buildContextForAuth(auth: AuthResult, environment: Environment): ToolContext {
+export function buildContextForAuth(
+  auth: AuthResult,
+  environment: Environment,
+  shortenUrl?: (url: string) => Promise<string>,
+): ToolContext {
   const client =
     auth.mode === 'bearer'
       ? buildClient({ mode: 'bearer', bearer: auth.bearer, environment })
       : buildClient({ mode: 'credentials', clientId: auth.clientId, clientSecret: auth.clientSecret, environment });
-  return { client, environment };
+  return { client, environment, ...(shortenUrl ? { shortenUrl } : {}) };
 }
 
 /**

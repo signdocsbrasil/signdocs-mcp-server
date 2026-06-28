@@ -59,6 +59,44 @@ export async function run(fn: () => Promise<unknown>): Promise<ToolResult> {
   }
 }
 
+/** A presigned (S3/etc.) URL — the kind LLMs corrupt when re-emitting as links. */
+function isPresignedUrl(s: string): boolean {
+  return /^https:\/\/\S+[?&]X-Amz-Signature=/.test(s);
+}
+
+/** Recursively replace presigned URLs in a value via the shortener. */
+async function shortenDeep(value: unknown, shorten: (url: string) => Promise<string>): Promise<unknown> {
+  if (typeof value === 'string') return isPresignedUrl(value) ? shorten(value) : value;
+  if (Array.isArray(value)) return Promise.all(value.map((v) => shortenDeep(v, shorten)));
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    await Promise.all(
+      Object.entries(value as Record<string, unknown>).map(async ([k, v]) => {
+        out[k] = await shortenDeep(v, shorten);
+      }),
+    );
+    return out;
+  }
+  return value;
+}
+
+/**
+ * Like {@link run}, but if the context has a `shortenUrl` hook, swap any presigned
+ * download URLs in the result for short redirect links the model can reproduce.
+ * Use for tools that return artifact URLs (download/evidence/verify/combined-stamp).
+ */
+export async function runWithLinks(
+  ctx: { shortenUrl?: (url: string) => Promise<string> },
+  fn: () => Promise<unknown>,
+): Promise<ToolResult> {
+  try {
+    const data = await fn();
+    return jsonContent(ctx.shortenUrl ? await shortenDeep(data, ctx.shortenUrl) : data);
+  } catch (err) {
+    return errorContent(err);
+  }
+}
+
 /** Use the caller-supplied idempotency key, or mint a fresh UUID. */
 export function idempotencyKey(provided?: string): string {
   return provided ?? randomUUID();

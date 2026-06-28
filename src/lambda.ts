@@ -52,6 +52,11 @@ export interface LambdaHandlerOptions {
   publicUrl?: string;
   /** CORS Access-Control-Allow-Origin. Default '*'. */
   corsOrigin?: string;
+  /**
+   * Optional shortener for presigned download URLs (see ToolContext.shortenUrl).
+   * The host supplies a store-backed implementation; without it, URLs pass through.
+   */
+  shortenUrl?: (url: string) => Promise<string>;
 }
 
 const CORS_ALLOW_HEADERS =
@@ -120,7 +125,7 @@ export function createLambdaHandler(options: LambdaHandlerOptions = {}): LambdaH
     }
 
     const environment = environmentFromHeaders(headers, defaultEnvironment);
-    const ctx = buildContextForAuth(auth, environment);
+    const ctx = buildContextForAuth(auth, environment, options.shortenUrl);
     const server = createMcpServer(ctx);
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
