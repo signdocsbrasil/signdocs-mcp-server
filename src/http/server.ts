@@ -68,7 +68,7 @@ function applyCors(res: ServerResponse, opts: ResolvedOptions): void {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, Mcp-Session-Id, Mcp-Protocol-Version, X-SignDocs-Environment',
+    'Content-Type, Authorization, Mcp-Session-Id, Mcp-Protocol-Version, X-SignDocs-Environment, X-SignDocs-Client-Id, X-SignDocs-Client-Secret',
   );
   res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id, WWW-Authenticate');
 }

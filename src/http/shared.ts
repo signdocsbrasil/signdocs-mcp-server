@@ -25,22 +25,38 @@ export function headerValue(headers: HeaderMap, name: string): string | undefine
   return Array.isArray(raw) ? raw[0] : raw;
 }
 
-/** Parse the Authorization header into a Bearer token or Basic client credentials. */
+/**
+ * Resolve auth from request headers. Precedence:
+ *   1. `Authorization: Bearer <token>` — SignDocs OAuth2 access token (passthrough).
+ *   2. `Authorization: Basic <base64(clientId:clientSecret)>` — client credentials.
+ *   3. `X-SignDocs-Client-Id` + `X-SignDocs-Client-Secret` — client credentials as
+ *      two plain headers (no base64). Lets header-only clients (e.g. the Claude
+ *      Code plugin, whose config can't transform values) pass raw credentials.
+ */
 export function extractAuthFromHeaders(headers: HeaderMap): AuthResult | null {
   const auth = headerValue(headers, 'authorization');
-  if (!auth) return null;
-  const space = auth.indexOf(' ');
-  if (space < 0) return null;
-  const scheme = auth.slice(0, space).toLowerCase();
-  const value = auth.slice(space + 1).trim();
-  if (!value) return null;
-  if (scheme === 'bearer') return { mode: 'bearer', bearer: value };
-  if (scheme === 'basic') {
-    const decoded = Buffer.from(value, 'base64').toString('utf8');
-    const sep = decoded.indexOf(':');
-    if (sep < 0) return null;
-    return { mode: 'credentials', clientId: decoded.slice(0, sep), clientSecret: decoded.slice(sep + 1) };
+  if (auth) {
+    const space = auth.indexOf(' ');
+    if (space > 0) {
+      const scheme = auth.slice(0, space).toLowerCase();
+      const value = auth.slice(space + 1).trim();
+      if (value && scheme === 'bearer') return { mode: 'bearer', bearer: value };
+      if (value && scheme === 'basic') {
+        const decoded = Buffer.from(value, 'base64').toString('utf8');
+        const sep = decoded.indexOf(':');
+        if (sep >= 0) {
+          return { mode: 'credentials', clientId: decoded.slice(0, sep), clientSecret: decoded.slice(sep + 1) };
+        }
+      }
+    }
   }
+
+  const clientId = headerValue(headers, 'x-signdocs-client-id');
+  const clientSecret = headerValue(headers, 'x-signdocs-client-secret');
+  if (clientId && clientSecret) {
+    return { mode: 'credentials', clientId, clientSecret };
+  }
+
   return null;
 }
 

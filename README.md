@@ -124,6 +124,8 @@ docker build -t signdocs-mcp . && docker run -p 3000:3000 signdocs-mcp
   `/oauth2/token`), passed straight through to the API.
 - `Authorization: Basic base64(clientId:clientSecret)` — the server runs the
   `client_credentials` exchange for you.
+- `X-SignDocs-Client-Id` + `X-SignDocs-Client-Secret` — the same client credentials
+  as two plain headers (no base64), for header-only clients that can't transform values.
 
 Pick the environment per session with `X-SignDocs-Environment: hml|production`
 (defaults to the server's configured default).

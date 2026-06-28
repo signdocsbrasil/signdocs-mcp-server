@@ -55,7 +55,7 @@ export interface LambdaHandlerOptions {
 }
 
 const CORS_ALLOW_HEADERS =
-  'Content-Type, Authorization, Mcp-Session-Id, Mcp-Protocol-Version, X-SignDocs-Environment';
+  'Content-Type, Authorization, Mcp-Session-Id, Mcp-Protocol-Version, X-SignDocs-Environment, X-SignDocs-Client-Id, X-SignDocs-Client-Secret';
 
 function corsHeaders(origin: string): Record<string, string> {
   return {
