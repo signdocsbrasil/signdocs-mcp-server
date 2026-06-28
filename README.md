@@ -162,6 +162,19 @@ Example client config (Bearer):
 > the existing `external-api` Lambda + API Gateway as a NestedStack is the
 > intended production path.
 
+### AWS Lambda
+
+For serverless hosting, `@signdocs-brasil/mcp-server/lambda` exports
+`createLambdaHandler` — an API Gateway HTTP API v2 handler that runs the MCP
+transport **statelessly** (one server per invocation, no session store), with the
+same Bearer/Basic auth. SignDocs hosts this on `mcp-hml.signdocs.com.br` /
+`mcp.signdocs.com.br`.
+
+```ts
+import { createLambdaHandler } from '@signdocs-brasil/mcp-server/lambda';
+export const handler = createLambdaHandler({ defaultEnvironment: 'hml' });
+```
+
 ## Development
 
 ```bash

@@ -9,14 +9,17 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createServer as createMcpServer } from '../server.js';
+import { type Environment } from '../client.js';
 import {
-  buildClient,
-  getBaseUrl,
-  resolveEnvironment,
-  DEFAULT_SCOPES,
-  type Environment,
-  type ToolContext,
-} from '../client.js';
+  extractAuthFromHeaders,
+  environmentFromHeaders,
+  buildContextForAuth,
+  protectedResourceMetadata as buildProtectedResourceMetadata,
+  wwwAuthenticate,
+  headerValue,
+  UNAUTHORIZED_BODY,
+  type AuthResult,
+} from './shared.js';
 
 /**
  * Phase 2 — remote Streamable-HTTP transport (stateful sessions).
@@ -60,10 +63,6 @@ interface Session {
   server: McpServer;
 }
 
-type AuthResult =
-  | { mode: 'bearer'; bearer: string }
-  | { mode: 'credentials'; clientId: string; clientSecret: string };
-
 function applyCors(res: ServerResponse, opts: ResolvedOptions): void {
   res.setHeader('Access-Control-Allow-Origin', opts.corsOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -87,61 +86,9 @@ function publicBase(req: IncomingMessage, opts: ResolvedOptions): string {
   return `${proto}://${host}`;
 }
 
-function headerValue(req: IncomingMessage, name: string): string | undefined {
-  const raw = req.headers[name];
-  return Array.isArray(raw) ? raw[0] : raw;
-}
-
-function extractAuth(req: IncomingMessage): AuthResult | null {
-  const header = req.headers.authorization;
-  if (!header) return null;
-  const space = header.indexOf(' ');
-  if (space < 0) return null;
-  const scheme = header.slice(0, space).toLowerCase();
-  const value = header.slice(space + 1).trim();
-  if (!value) return null;
-  if (scheme === 'bearer') return { mode: 'bearer', bearer: value };
-  if (scheme === 'basic') {
-    const decoded = Buffer.from(value, 'base64').toString('utf8');
-    const sep = decoded.indexOf(':');
-    if (sep < 0) return null;
-    return { mode: 'credentials', clientId: decoded.slice(0, sep), clientSecret: decoded.slice(sep + 1) };
-  }
-  return null;
-}
-
-function requestEnvironment(req: IncomingMessage, fallback: Environment): Environment {
-  const value = headerValue(req, 'x-signdocs-environment');
-  if (value && value.trim()) {
-    try {
-      return resolveEnvironment(value);
-    } catch {
-      /* ignore invalid header, use fallback */
-    }
-  }
-  return fallback;
-}
-
-function protectedResourceMetadata(req: IncomingMessage, opts: ResolvedOptions): Record<string, unknown> {
-  return {
-    resource: `${publicBase(req, opts)}/mcp`,
-    authorization_servers: [getBaseUrl(opts.defaultEnvironment)],
-    scopes_supported: DEFAULT_SCOPES,
-    bearer_methods_supported: ['header'],
-  };
-}
-
 function challenge(req: IncomingMessage, res: ServerResponse, opts: ResolvedOptions): void {
-  res.setHeader(
-    'WWW-Authenticate',
-    `Bearer resource_metadata="${publicBase(req, opts)}/.well-known/oauth-protected-resource"`,
-  );
-  sendJson(res, 401, {
-    error: 'unauthorized',
-    error_description:
-      'Provide a SignDocs OAuth2 access token (Authorization: Bearer <token>) or client ' +
-      'credentials (Authorization: Basic base64(clientId:clientSecret)) on the initialize request.',
-  });
+  res.setHeader('WWW-Authenticate', wwwAuthenticate(`${publicBase(req, opts)}/.well-known/oauth-protected-resource`));
+  sendJson(res, 401, UNAUTHORIZED_BODY);
 }
 
 function readBody(req: IncomingMessage): Promise<unknown> {
@@ -168,18 +115,13 @@ async function startSession(
   sessions: Map<string, Session>,
   body: unknown,
 ): Promise<void> {
-  const auth = extractAuth(req);
+  const auth: AuthResult | null = extractAuthFromHeaders(req.headers);
   if (!auth) {
     challenge(req, res, opts);
     return;
   }
-  const environment = requestEnvironment(req, opts.defaultEnvironment);
-  const client =
-    auth.mode === 'bearer'
-      ? buildClient({ mode: 'bearer', bearer: auth.bearer, environment })
-      : buildClient({ mode: 'credentials', clientId: auth.clientId, clientSecret: auth.clientSecret, environment });
-
-  const ctx: ToolContext = { client, environment };
+  const environment = environmentFromHeaders(req.headers, opts.defaultEnvironment);
+  const ctx = buildContextForAuth(auth, environment);
   const server = createMcpServer(ctx);
   const transport = new StreamableHTTPServerTransport({
     sessionIdGenerator: () => randomUUID(),
@@ -216,7 +158,7 @@ async function handlePost(
     return;
   }
 
-  const sessionId = headerValue(req, 'mcp-session-id');
+  const sessionId = headerValue(req.headers, 'mcp-session-id');
   const existing = sessionId ? sessions.get(sessionId) : undefined;
   if (existing) {
     await existing.transport.handleRequest(req, res, body);
@@ -256,7 +198,7 @@ async function handle(
     return;
   }
   if (method === 'GET' && path === '/.well-known/oauth-protected-resource') {
-    sendJson(res, 200, protectedResourceMetadata(req, opts));
+    sendJson(res, 200, buildProtectedResourceMetadata(`${publicBase(req, opts)}/mcp`, opts.defaultEnvironment));
     return;
   }
 
@@ -272,7 +214,7 @@ async function handle(
 
   // GET (SSE stream) and DELETE (session teardown) require an established session.
   if (method === 'GET' || method === 'DELETE') {
-    const sessionId = headerValue(req, 'mcp-session-id');
+    const sessionId = headerValue(req.headers, 'mcp-session-id');
     const session = sessionId ? sessions.get(sessionId) : undefined;
     if (!session) {
       sendJson(res, 400, { error: 'invalid_session', error_description: 'Unknown or missing Mcp-Session-Id.' });

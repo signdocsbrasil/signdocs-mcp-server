@@ -1,7 +1,7 @@
 {
   "name": "@signdocs-brasil/mcp-server",
-  "version": "0.2.0",
-  "description": "Model Context Protocol (MCP) server for the SignDocs Brasil e-signature API — lets AI agents create signing sessions, manage envelopes, verify documents and more. Local stdio + remote HTTP transports.",
+  "version": "0.3.0",
+  "description": "Model Context Protocol (MCP) server for the SignDocs Brasil e-signature API — lets AI agents create signing sessions, manage envelopes, verify documents and more. Local stdio, remote HTTP, and AWS Lambda transports.",
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -11,8 +11,22 @@
     "signdocs-mcp": "dist/bin/stdio.js",
     "signdocs-mcp-http": "dist/bin/http.js"
   },
-  "main": "dist/server.js",
-  "types": "dist/server.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./http": {
+      "types": "./dist/http/server.d.ts",
+      "import": "./dist/http/server.js"
+    },
+    "./lambda": {
+      "types": "./dist/lambda.d.ts",
+      "import": "./dist/lambda.js"
+    }
+  },
   "files": [
     "dist",
     "README.md",
