@@ -3,9 +3,17 @@
 Checklist for listing the SignDocs MCP server in public directories. Each needs a
 SignDocs-owned account (npm/GitHub) and is a manual, gated step.
 
-## 1. Official MCP Registry (registry.modelcontextprotocol.io)
+## 1. Official MCP Registry (registry.modelcontextprotocol.io) — ✅ DONE
 
-Manifest: [`server.json`](./server.json) (namespace `io.github.signdocsbrasil/mcp-server`).
+**Live:** `br.com.signdocs/mcp-server@0.3.2` (published 2026-06-28).
+Namespace is **DNS-based** (signdocs.com.br apex TXT proof) — chosen over
+`io.github.*` so no interactive GitHub login is needed. To publish a new version:
+bump `server.json` + `package.json` (keep `mcpName: br.com.signdocs/mcp-server`),
+publish to npm, then `mcp-publisher login dns --domain signdocs.com.br
+--private-key <ed25519 seed hex>` and `mcp-publisher publish`. The Route53 apex
+TXT proof (`v=MCPv1; k=ed25519; p=…`) must remain in the signdocs.com.br zone.
+
+Manifest: [`server.json`](./server.json) (namespace `br.com.signdocs/mcp-server`).
 
 ```bash
 # Install the publisher CLI (see the registry's current publishing guide)
