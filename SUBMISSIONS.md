@@ -31,23 +31,43 @@ Notes:
 - The `$schema` date (`2025-12-11`) and field names evolve — re-validate with the CLI
   at submission time.
 
-## 2. Anthropic official plugin marketplace
+## 2. Anthropic plugin directory (claude-community marketplace)
 
-Repo: https://github.com/anthropics/claude-plugins-official
+There are TWO Anthropic marketplaces:
+- **`claude-plugins-official`** — curated by Anthropic *at its discretion*. There is
+  **no application process**; the submission form does NOT add plugins here. We can't
+  submit to it — Anthropic decides.
+- **`claude-plugins-community`** (`anthropics/claude-plugins-community`) — where
+  third-party submissions land after review. Users add it with `/plugin marketplace add
+  anthropics/claude-plugins-community` and install as `@claude-community`. **This is
+  where we submit.**
 
-Submit a PR adding an entry that points at the SignDocs plugin marketplace
-(`signdocsbrasil/signdocs-mcp-plugin`). The plugin itself already validates with
-`claude plugin validate --strict`. Follow that repo's contribution guidelines for
-required metadata and review.
+Submit via one of the in-app forms (NOT a GitHub PR):
+- **Console:** https://platform.claude.com/plugins/submit — for individual authors not
+  in a Team/Enterprise org.
+- **claude.ai:** https://claude.ai/admin-settings/directory/submissions/plugins/new —
+  requires a Team/Enterprise org + directory-management access (org Owners have it).
+
+Point the submission at `signdocsbrasil/signdocs-mcp-plugin`. Run `claude plugin
+validate` locally first (the review pipeline runs the same check + automated safety
+screening). Have ready a HML sandbox reviewer credential (the plugin's userConfig needs
+client_id/client_secret) and the privacy-policy URL
+(https://www.signdocs.com.br/politica-de-privacidade.html).
+
+After approval, the plugin is pinned to a commit SHA in the community catalog; CI bumps
+the pin as we push new commits, and the public `marketplace.json` syncs nightly (so
+expect a delay before it's installable). Check by searching its name in the community
+catalog.
 
 ## 3. Other directories (optional)
 
 - **Smithery** (smithery.ai) — submit the npm server / remote endpoint.
 - **mcp.so / Glama / PulseMCP** community catalogs — submit the GitHub repo.
-- **Claude connector directory (claude.ai web)** — BLOCKED until the SignDocs
-  `/oauth2` server adds the OAuth `authorization_code` + PKCE + Dynamic Client
-  Registration flow (the web "Add connector" UI requires it; the AS is
-  `client_credentials`-only today). Track as the Phase 2 backend project.
+- **Claude connector directory (claude.ai web)** — UNBLOCKED: the SignDocs OAuth
+  server now supports `authorization_code` + PKCE + DCR + AS metadata, live in prod
+  (`auth.signdocs.com.br`), and the custom connector is verified working in the
+  claude.ai web UI. Directory listing still needs a privacy policy + reviewer test
+  creds when submitting.
 
 ## Already live (no submission needed)
 
