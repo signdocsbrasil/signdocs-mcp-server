@@ -17,13 +17,34 @@ adding an envelope signer. An invalid value returns HTTP 400.
 | CLICK_PLUS_OTP        | clickwrap + e-mail/SMS one-time code    | standard e-signature |
 | BIOMETRIC             | facial liveness + match                 | high-assurance identity |
 | BIOMETRIC_PLUS_OTP    | biometric + OTP                         | strongest hosted assurance |
+| DIGITAL_CERTIFICATE   | clickwrap + ICP-Brasil A1 signature     | certificate-based signing |
 | CUSTOM                | caller-defined ordered steps            | supply \`customSteps\` |
 
-When \`policyProfile=CUSTOM\`, set \`customSteps\` to an ordered list of step
-types, e.g. ["CLICKWRAP","OTP","BIOMETRIC_LIVENESS","BIOMETRIC_MATCH"].
+Three further biometric variants exist and are accepted by the API —
+BIOMETRIC_SERPRO, BIOMETRIC_SERPRO_AUTO_FALLBACK and
+BIOMETRIC_DOCUMENT_FALLBACK — but they need biometric quota provisioned on the
+tenant, so prefer the profiles above unless the account is set up for them.
 
-Digital ICP-Brasil A1 certificate signing is exposed through the transaction/
-advance flow (step type DIGITAL_CERTIFICATE), not as a hosted-session profile.
+When \`policyProfile=CUSTOM\`, set \`customSteps\` to an ordered list of step
+types (max 10). \`customSteps\` is accepted by BOTH \`create_signing_session\`
+and \`add_session_to_envelope\`. Omitting it with CUSTOM returns HTTP 422
+"CUSTOM policy requires customSteps array".
+
+Valid step types — any other value returns "Unknown step type":
+
+CLICK_ACCEPT, OTP_CHALLENGE, OTP_VERIFY, BIOMETRIC_LIVENESS, BIOMETRIC_MATCH,
+DIGITAL_SIGN_A1, SERPRO_IDENTITY_CHECK, DOCUMENT_PHOTO_MATCH, PURPOSE_DISCLOSURE
+
+Ordering rules (violations return 422):
+- OTP_CHALLENGE and OTP_VERIFY must both be present or both absent, and
+  OTP_VERIFY must come after OTP_CHALLENGE.
+- BIOMETRIC_MATCH requires BIOMETRIC_LIVENESS.
+
+Example: ["CLICK_ACCEPT","OTP_CHALLENGE","OTP_VERIFY"].
+
+Digital ICP-Brasil A1 certificate signing uses the DIGITAL_CERTIFICATE profile
+(whose steps are CLICK_ACCEPT + DIGITAL_SIGN_A1). \`DIGITAL_SIGN_A1\` is a step
+type only — passing it as \`policyProfile\` returns 400.
 `;
 
 const QUICKSTART = `# SignDocs MCP quickstart
@@ -40,7 +61,9 @@ Most integrations need only the high-level **signing session** flow:
    \`verify_evidence\`.
 
 Multiple signers on one document → use \`create_envelope\` then
-\`add_session_to_envelope\` once per signer (signerIndex 0..N-1).
+\`add_session_to_envelope\` once per signer. \`signerIndex\` is **one-based**:
+the first signer is 1 and the last is totalSigners (1..N). Sending 0 returns
+HTTP 400 "signerIndex must be a positive integer (1-based)".
 
 Environment: set SIGNDOCS_ENVIRONMENT=hml (default) for testing or
 =production for live, binding signatures. HML data expires after ~7 days and

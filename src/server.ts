@@ -11,7 +11,7 @@ import { registerUploadTools } from './tools/uploads.js';
 import { registerResources } from './resources.js';
 
 export const SERVER_NAME = 'signdocs-brasil';
-export const SERVER_VERSION = '0.7.0';
+export const SERVER_VERSION = '0.7.1';
 
 const INSTRUCTIONS = `SignDocs Brasil electronic-signature API.
 

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   createSigningSessionShape,
   createEnvelopeShape,
+  addEnvelopeSessionShape,
   listSigningSessionsShape,
   registerWebhookShape,
 } from '../src/schemas.js';
@@ -64,6 +65,40 @@ describe('createEnvelopeShape', () => {
     expect(() => env.parse({ signingMode: 'PARALLEL' })).toThrow();
     const ok = env.parse({ signingMode: 'SEQUENTIAL', totalSigners: 2, documentBase64: 'JVBERi0=' });
     expect(ok.totalSigners).toBe(2);
+  });
+});
+
+describe('addEnvelopeSessionShape', () => {
+  const addSession = z.object(addEnvelopeSessionShape);
+  const base = {
+    envelopeId: 'env_1',
+    signer: { name: 'Maria', userExternalId: 'u-1', cpf: '12345678901' },
+    policyProfile: 'CLICK_ONLY',
+  };
+
+  // The API validates `signerIndex >= 1` and rejects 0 with
+  // "signerIndex must be a positive integer (1-based)".
+  it('rejects signerIndex 0 — the API is one-based', () => {
+    expect(() => addSession.parse({ ...base, signerIndex: 0 })).toThrow();
+  });
+
+  it('accepts a one-based signerIndex', () => {
+    expect(addSession.parse({ ...base, signerIndex: 1 }).signerIndex).toBe(1);
+  });
+
+  // CUSTOM is a valid profile here, and the API 422s without customSteps.
+  it('carries customSteps for the CUSTOM profile', () => {
+    const parsed = addSession.parse({
+      ...base,
+      policyProfile: 'CUSTOM',
+      signerIndex: 2,
+      customSteps: ['CLICK_ACCEPT', 'OTP_CHALLENGE', 'OTP_VERIFY'],
+    });
+    expect(parsed.customSteps).toEqual(['CLICK_ACCEPT', 'OTP_CHALLENGE', 'OTP_VERIFY']);
+  });
+
+  it('leaves customSteps optional for the built-in profiles', () => {
+    expect(addSession.parse({ ...base, signerIndex: 1 }).customSteps).toBeUndefined();
   });
 });
 

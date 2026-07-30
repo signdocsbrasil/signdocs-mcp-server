@@ -55,7 +55,7 @@ export const createSigningSessionShape = {
   customSteps: z
     .array(z.string())
     .optional()
-    .describe('Ordered step types — REQUIRED only when policyProfile=CUSTOM (e.g. ["CLICKWRAP","OTP"]).'),
+    .describe('Ordered step types — REQUIRED only when policyProfile=CUSTOM (e.g. ["CLICK_ACCEPT","OTP_CHALLENGE","OTP_VERIFY"]). Read signdocs://policy-profiles for the valid names and ordering rules.'),
   signer: signerObject,
   documentBase64: z
     .string()
@@ -131,8 +131,16 @@ export const addEnvelopeSessionShape = {
   envelopeId: z.string().describe('The envelope to add a signer to.'),
   signer: signerObject,
   policyProfile: POLICY_PROFILE,
+  customSteps: z
+    .array(z.string())
+    .optional()
+    .describe('Ordered step types — REQUIRED only when policyProfile=CUSTOM (e.g. ["CLICK_ACCEPT","OTP_CHALLENGE","OTP_VERIFY"]).'),
   purpose: PURPOSE.optional(),
-  signerIndex: z.number().int().min(0).describe('Zero-based position of this signer (0..totalSigners-1).'),
+  signerIndex: z
+    .number()
+    .int()
+    .min(1)
+    .describe('One-based position of this signer in the envelope (1..totalSigners). The first signer is 1, NOT 0.'),
   returnUrl: z.string().url().optional(),
   cancelUrl: z.string().url().optional(),
   metadata,

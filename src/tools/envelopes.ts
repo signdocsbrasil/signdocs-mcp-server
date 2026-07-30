@@ -6,6 +6,17 @@ import { CONFIRM_WARNING, DESTRUCTIVE, READ_ONLY } from '../annotations.js';
 import { run, runWithLinks, idempotencyKey, resolveDocument } from './helpers.js';
 import { createEnvelopeShape, envelopeIdShape, addEnvelopeSessionShape } from '../schemas.js';
 
+/**
+ * The API's envelope add-session endpoint runs the same policy engine as signing
+ * sessions, so `policy.customSteps` is honoured (and REQUIRED when
+ * profile=CUSTOM — otherwise it 422s with "CUSTOM policy requires customSteps
+ * array"). The SDK's request type predates that, so widen it here rather than
+ * silently dropping the field.
+ */
+type AddEnvelopeSessionRequestWithPolicySteps = Omit<AddEnvelopeSessionRequest, 'policy'> & {
+  policy: AddEnvelopeSessionRequest['policy'] & { customSteps?: string[] };
+};
+
 export function registerEnvelopeTools(server: McpServer, ctx: ToolContext): void {
   server.registerTool(
     'create_envelope',
@@ -56,15 +67,19 @@ export function registerEnvelopeTools(server: McpServer, ctx: ToolContext): void
       title: 'Add signer to envelope',
       description:
         CONFIRM_WARNING +
-        'Add a signing session for one signer to an envelope. Returns IDs plus a ready-to-share `signingUrl`.',
+        'Add a signing session for one signer to an envelope. `signerIndex` is ONE-based — ' +
+        'the first signer is 1 and the last is totalSigners. Returns IDs plus a ready-to-share `signingUrl`.',
       inputSchema: addEnvelopeSessionShape,
       annotations: DESTRUCTIVE,
     },
     async (args) =>
       run(async () => {
-        const req: AddEnvelopeSessionRequest = {
+        const req: AddEnvelopeSessionRequestWithPolicySteps = {
           signer: args.signer,
-          policy: { profile: args.policyProfile },
+          policy: {
+            profile: args.policyProfile,
+            ...(args.customSteps ? { customSteps: args.customSteps } : {}),
+          },
           signerIndex: args.signerIndex,
           ...(args.purpose ? { purpose: args.purpose } : {}),
           ...(args.returnUrl ? { returnUrl: args.returnUrl } : {}),
