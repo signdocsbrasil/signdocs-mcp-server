@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   createSigningSessionShape,
   createEnvelopeShape,
+  addEnvelopeSessionShape,
   listSigningSessionsShape,
   registerWebhookShape,
 } from '../src/schemas.js';
@@ -82,5 +83,26 @@ describe('registerWebhookShape', () => {
     expect(() => w.parse({ url: 'not-a-url', events: ['TRANSACTION.COMPLETED'] })).toThrow();
     expect(() => w.parse({ url: 'https://h.example/hook', events: ['BOGUS.EVENT'] })).toThrow();
     expect(() => w.parse({ url: 'https://h.example/hook', events: [] })).toThrow();
+  });
+});
+
+describe('addEnvelopeSessionShape', () => {
+  const addSession = z.object(addEnvelopeSessionShape);
+  const base = {
+    envelopeId: 'env_1',
+    signer: { name: 'Maria', userExternalId: 'u-1' },
+    policyProfile: 'CLICK_ONLY',
+  };
+
+  it('rejects signerIndex 0 — the API is 1-based', () => {
+    // The schema advertised "zero-based (0..totalSigners-1)" and validated
+    // min(0), so an agent following it sent 0 and got
+    // `signerIndex must be a positive integer (1-based)` back as a 400.
+    // Rejecting locally turns a round-trip failure into an argument error.
+    expect(() => addSession.parse({ ...base, signerIndex: 0 })).toThrow();
+  });
+
+  it('accepts signerIndex 1 as the first signer', () => {
+    expect(addSession.parse({ ...base, signerIndex: 1 }).signerIndex).toBe(1);
   });
 });

@@ -132,7 +132,7 @@ export const addEnvelopeSessionShape = {
   signer: signerObject,
   policyProfile: POLICY_PROFILE,
   purpose: PURPOSE.optional(),
-  signerIndex: z.number().int().min(0).describe('Zero-based position of this signer (0..totalSigners-1).'),
+  signerIndex: z.number().int().min(1).describe('Position of this signer, 1-based (1..totalSigners).'),
   returnUrl: z.string().url().optional(),
   cancelUrl: z.string().url().optional(),
   metadata,

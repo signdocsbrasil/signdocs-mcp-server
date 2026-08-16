@@ -40,7 +40,7 @@ Most integrations need only the high-level **signing session** flow:
    \`verify_evidence\`.
 
 Multiple signers on one document → use \`create_envelope\` then
-\`add_session_to_envelope\` once per signer (signerIndex 0..N-1).
+\`add_session_to_envelope\` once per signer (signerIndex 1..N).
 
 Environment: set SIGNDOCS_ENVIRONMENT=hml (default) for testing or
 =production for live, binding signatures. HML data expires after ~7 days and
