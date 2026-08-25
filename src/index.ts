@@ -22,6 +22,17 @@ export {
   type ResolvedEnv,
 } from './client.js';
 export { createHttpServer, type HttpServerOptions } from './http/server.js';
+export { decodePrincipal, type DecodedPrincipal } from './channel/detect.js';
+export type { ChannelApiFactory } from './http/shared.js';
+export type {
+  ChannelApi,
+  ChannelDocument,
+  ChannelSigner,
+  CreateEnvelopeInput,
+  CreateEnvelopeResult,
+  CreateSessionInput,
+  CreateSessionResult,
+} from './channel/types.js';
 export {
   createLambdaHandler,
   type LambdaHandler,

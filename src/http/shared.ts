@@ -6,6 +6,8 @@ import {
   type ToolContext,
   type ContextHooks,
 } from '../client.js';
+import { decodePrincipal, type DecodedPrincipal } from '../channel/detect.js';
+import type { ChannelApi } from '../channel/types.js';
 
 /**
  * Transport-agnostic auth/discovery helpers shared by the long-running HTTP
@@ -73,19 +75,41 @@ export function environmentFromHeaders(headers: HeaderMap, fallback: Environment
   return fallback;
 }
 
+/**
+ * A host-provided factory that binds an account-mode API to one signed-in human.
+ *
+ * Called once per request, after the principal has been read off the token, so
+ * the returned implementation can close over that identity and never take it as
+ * an argument again — which is what stops a tool from acting as somebody else.
+ */
+export type ChannelApiFactory = (principal: DecodedPrincipal) => ChannelApi;
+
+export interface BuildContextHooks extends ContextHooks {
+  channelApiFactory?: ChannelApiFactory;
+}
+
 /** Build a request-scoped tool context (fresh SDK client) from parsed auth + host hooks. */
 export function buildContextForAuth(
   auth: AuthResult,
   environment: Environment,
-  hooks: ContextHooks = {},
+  hooks: BuildContextHooks = {},
 ): ToolContext {
   const client =
     auth.mode === 'bearer'
       ? buildClient({ mode: 'bearer', bearer: auth.bearer, environment })
       : buildClient({ mode: 'credentials', clientId: auth.clientId, clientSecret: auth.clientSecret, environment });
+
+  // A token minted through account login carries the human it acts for. Its
+  // presence is what selects the smaller, owner-scoped catalogue; an ordinary
+  // client_credentials token has no principal and gets the full tenant surface,
+  // exactly as before.
+  const principal = auth.mode === 'bearer' ? decodePrincipal(auth.bearer) : null;
+  const channelApi = principal && hooks.channelApiFactory ? hooks.channelApiFactory(principal) : undefined;
+
   return {
     client,
     environment,
+    ...(channelApi ? { mode: 'channel' as const, channelApi } : {}),
     ...(hooks.shortenUrl ? { shortenUrl: hooks.shortenUrl } : {}),
     ...(hooks.createUpload ? { createUpload: hooks.createUpload } : {}),
     ...(hooks.resolveUpload ? { resolveUpload: hooks.resolveUpload } : {}),

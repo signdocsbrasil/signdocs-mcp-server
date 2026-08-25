@@ -8,6 +8,7 @@ import {
   protectedResourceMetadata,
   wwwAuthenticate,
   UNAUTHORIZED_BODY,
+  type ChannelApiFactory,
 } from './http/shared.js';
 
 /**
@@ -45,6 +46,12 @@ export interface ApiGatewayV2Result {
 
 export type LambdaHandler = (event: ApiGatewayV2Event) => Promise<ApiGatewayV2Result>;
 
+// Re-exported so a host importing only "@signdocs-brasil/mcp-server/lambda"
+// can type its factory without also importing the package root.
+export type { ChannelApiFactory } from './http/shared.js';
+export type { DecodedPrincipal } from './channel/detect.js';
+export type { ChannelApi } from './channel/types.js';
+
 export interface LambdaHandlerOptions {
   /** Environment when a request doesn't send X-SignDocs-Environment. Default 'hml'. */
   defaultEnvironment?: Environment;
@@ -60,6 +67,12 @@ export interface LambdaHandlerOptions {
   /** Optional upload hooks (see ToolContext.createUpload / resolveUpload). */
   createUpload?: (opts: { filename?: string }) => Promise<{ uploadToken: string; uploadPageUrl: string }>;
   resolveUpload?: (token: string) => Promise<{ content: string; filename?: string }>;
+  /**
+   * Enables account mode. Called per request when the bearer token carries a
+   * principal, and returns an implementation bound to that human. Omit it and
+   * every request stays in tenant mode, exactly as before.
+   */
+  channelApiFactory?: ChannelApiFactory;
 }
 
 const CORS_ALLOW_HEADERS =
@@ -132,6 +145,7 @@ export function createLambdaHandler(options: LambdaHandlerOptions = {}): LambdaH
       shortenUrl: options.shortenUrl,
       createUpload: options.createUpload,
       resolveUpload: options.resolveUpload,
+      channelApiFactory: options.channelApiFactory,
     });
     const server = createMcpServer(ctx);
     const transport = new WebStandardStreamableHTTPServerTransport({

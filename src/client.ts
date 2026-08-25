@@ -1,5 +1,6 @@
 import { SignDocsBrasilClient } from '@signdocs-brasil/api';
 import type { TokenCache, CachedToken } from '@signdocs-brasil/api';
+import type { ChannelApi } from './channel/types.js';
 
 /**
  * Thin wrapper that turns environment variables into a configured
@@ -106,6 +107,7 @@ export function buildSigningUrl(url: string, clientSecret: string): string {
 
 // ── Per-request client construction (used by the remote HTTP transport) ───────
 
+
 /**
  * What every tool handler needs to talk to SignDocs. In the stdio server this
  * is built once from env; in the remote HTTP server it is built per-request so
@@ -114,6 +116,20 @@ export function buildSigningUrl(url: string, clientSecret: string): string {
 export interface ToolContext {
   client: SignDocsBrasilClient;
   environment: Environment;
+  /**
+   * Which security model this request runs under.
+   *
+   * `tenant` (the default) is the original one: the caller holds their own API
+   * credentials and the tenant boundary separates them from everyone else.
+   *
+   * `channel` is account mode: the caller logged in with a SignDocs account and
+   * every user of the channel shares one upstream tenant, so separation is
+   * enforced per request by the host through {@link ChannelApi}. The tool
+   * catalogue is smaller as a result — see src/channel/types.ts.
+   */
+  mode?: 'tenant' | 'channel';
+  /** Host-provided implementation. Required when mode === 'channel'. */
+  channelApi?: ChannelApi;
   /**
    * Optional hook to turn a long presigned download URL into a short, stable link
    * the model can reproduce verbatim (LLMs garble ~2KB signed-URL tokens when
@@ -140,6 +156,11 @@ export interface ContextHooks {
   shortenUrl?: ToolContext['shortenUrl'];
   createUpload?: ToolContext['createUpload'];
   resolveUpload?: ToolContext['resolveUpload'];
+  /**
+   * Supplying this is what puts a request into account mode. The host decides:
+   * it builds one only after it has verified who the human is.
+   */
+  channelApi?: ChannelApi;
 }
 
 /**
