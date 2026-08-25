@@ -11,6 +11,21 @@ import type { ChannelApi } from './channel/types.js';
 
 export type Environment = 'production' | 'hml';
 
+/**
+ * Turn a long, token-bearing URL into a short one the model can reproduce
+ * verbatim.
+ *
+ * `ttlSeconds` exists because the two kinds of link this is used for have very
+ * different lifetimes. A presigned download URL is dead within the hour anyway,
+ * so the host's default is fine. A SIGNING link has to outlive the signing
+ * window — up to seven days — and shortening it with the download default would
+ * replace a garbled link with a dead one, which is worse: a garbled link fails
+ * visibly, an expired one looks like the document was withdrawn.
+ *
+ * Hosts that ignore the option keep their previous behaviour.
+ */
+export type ShortenUrl = (url: string, opts?: { ttlSeconds?: number }) => Promise<string>;
+
 const BASE_URLS: Record<Environment, string> = {
   production: 'https://api.signdocs.com.br',
   // NOTE: HML uses the dash form (api-hml), NOT api.hml.
@@ -136,7 +151,7 @@ export interface ToolContext {
    * re-emitting them as links). Injected by the hosting layer (e.g. the Lambda
    * adapter, backed by a store + a /d/{id} redirect). Undefined ⇒ URLs unchanged.
    */
-  shortenUrl?: (url: string) => Promise<string>;
+  shortenUrl?: ShortenUrl;
   /**
    * Optional hook backing the `request_document_upload` tool: returns a one-time
    * drag-and-drop upload page URL the user opens to upload a PDF (browser→S3),

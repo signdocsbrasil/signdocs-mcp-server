@@ -17,6 +17,7 @@ export {
   StaticTokenCache,
   DEFAULT_SCOPES,
   type Environment,
+  type ShortenUrl,
   type ToolContext,
   type BuildClientOptions,
   type ResolvedEnv,

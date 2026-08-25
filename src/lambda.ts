@@ -1,6 +1,6 @@
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { createServer as createMcpServer } from './server.js';
-import type { Environment } from './client.js';
+import type { Environment, ShortenUrl } from './client.js';
 import {
   extractAuthFromHeaders,
   environmentFromHeaders,
@@ -51,6 +51,7 @@ export type LambdaHandler = (event: ApiGatewayV2Event) => Promise<ApiGatewayV2Re
 export type { ChannelApiFactory } from './http/shared.js';
 export type { DecodedPrincipal } from './channel/detect.js';
 export type { ChannelApi } from './channel/types.js';
+export type { ShortenUrl } from './client.js';
 
 export interface LambdaHandlerOptions {
   /** Environment when a request doesn't send X-SignDocs-Environment. Default 'hml'. */
@@ -63,7 +64,7 @@ export interface LambdaHandlerOptions {
    * Optional shortener for presigned download URLs (see ToolContext.shortenUrl).
    * The host supplies a store-backed implementation; without it, URLs pass through.
    */
-  shortenUrl?: (url: string) => Promise<string>;
+  shortenUrl?: ShortenUrl;
   /** Optional upload hooks (see ToolContext.createUpload / resolveUpload). */
   createUpload?: (opts: { filename?: string }) => Promise<{ uploadToken: string; uploadPageUrl: string }>;
   resolveUpload?: (token: string) => Promise<{ content: string; filename?: string }>;

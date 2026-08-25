@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { fetchDocumentAsBase64 } from '../fetch-document.js';
+import type { ShortenUrl } from '../client.js';
 
 /**
  * Resolve a document from either inline base64 or a server-fetched URL.
@@ -98,7 +99,7 @@ async function shortenDeep(value: unknown, shorten: (url: string) => Promise<str
  * Use for tools that return artifact URLs (download/evidence/verify/combined-stamp).
  */
 export async function runWithLinks(
-  ctx: { shortenUrl?: (url: string) => Promise<string> },
+  ctx: { shortenUrl?: ShortenUrl },
   fn: () => Promise<unknown>,
 ): Promise<ToolResult> {
   try {
