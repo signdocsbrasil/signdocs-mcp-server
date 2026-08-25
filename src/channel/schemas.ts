@@ -16,11 +16,26 @@ import { z } from 'zod';
  *    may not pass a stable value on retry.
  */
 
+/**
+ * The profiles this channel offers — an enum, not a free string.
+ *
+ * The API itself accepts five, but two of them (BIOMETRIC, BIOMETRIC_PLUS_OTP)
+ * need hosted facial liveness, which the shared channel tenant does not have
+ * enabled. Offering them would let a model create a session that is charged and
+ * then cannot be signed by anybody, which is the worst of both outcomes.
+ *
+ * Enumerated rather than described in prose because the failure modes are not
+ * symmetric: a rejected value costs a validation error the model can correct for
+ * free, while an accepted-but-unusable one costs a document that is never
+ * refunded. Let the type system refuse it.
+ */
 const POLICY_PROFILE = z
-  .string()
+  .enum(['CLICK_ONLY', 'CLICK_PLUS_OTP', 'DIGITAL_CERTIFICATE'])
   .describe(
-    'Identity-assurance profile: CLICK_ONLY, CLICK_PLUS_OTP, BIOMETRIC, BIOMETRIC_PLUS_OTP. ' +
-      'Read the signdocs://policy-profiles resource for the authoritative list — an invalid value returns 400.',
+    'How the signer proves who they are. CLICK_ONLY = accept by clicking. ' +
+      'CLICK_PLUS_OTP = click plus a one-time code by e-mail or SMS. ' +
+      'DIGITAL_CERTIFICATE = click plus an ICP-Brasil A1 certificate signature. ' +
+      'Read the signdocs://policy-profiles resource before choosing.',
   );
 
 const documentFields = {
@@ -40,8 +55,16 @@ const channelSigner = z
   .object({
     name: z.string().describe('Signer full name.'),
     email: z.string().email().optional().describe('Where the invite goes. Defaults to the signed-in account.'),
-    cpf: z.string().optional().describe('Brazilian individual taxpayer ID, digits only. Required by CLICK_ONLY.'),
-    cnpj: z.string().optional().describe('Brazilian company taxpayer ID, digits only.'),
+    // Not optional in practice. The API requires one or the other on EVERY
+    // profile (signing-sessions/create.ts), and describing it as CLICK_ONLY-only
+    // is what sent the first real ChatGPT session into a 400.
+    cpf: z.string().optional().describe(
+      'Brazilian individual taxpayer ID (CPF), digits only. REQUIRED unless you pass cnpj — ' +
+        'the signature is attributed to this document, so ask the user for it before sending.',
+    ),
+    cnpj: z.string().optional().describe(
+      'Brazilian company taxpayer ID (CNPJ), digits only. Use instead of cpf when the signer signs for a company.',
+    ),
   })
   .describe('The person who will sign.');
 

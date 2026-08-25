@@ -134,3 +134,27 @@ describe('catalogue', () => {
     expect(names).not.toContain('get_my_account');
   });
 });
+
+describe('policy profiles offered in account mode', () => {
+  it('offers exactly the three the shared tenant can actually complete', async () => {
+    const { channelCreateSessionShape } = await import('../src/channel/schemas.js');
+    const opts = (channelCreateSessionShape.policyProfile as unknown as { options: string[] }).options;
+    expect([...opts].sort()).toEqual(['CLICK_ONLY', 'CLICK_PLUS_OTP', 'DIGITAL_CERTIFICATE']);
+  });
+
+  it('refuses the biometric profiles at the schema, before anything is spent', async () => {
+    // The tenant has hostedLivenessEnabled=false, so a biometric session would be
+    // charged and then be unsignable. A validation error is free; a document is not.
+    const { channelCreateSessionShape } = await import('../src/channel/schemas.js');
+    for (const bad of ['BIOMETRIC', 'BIOMETRIC_PLUS_OTP', 'CUSTOM', 'anything']) {
+      expect(channelCreateSessionShape.policyProfile.safeParse(bad).success).toBe(false);
+    }
+  });
+
+  it('accepts each of the three', async () => {
+    const { channelCreateSessionShape } = await import('../src/channel/schemas.js');
+    for (const good of ['CLICK_ONLY', 'CLICK_PLUS_OTP', 'DIGITAL_CERTIFICATE']) {
+      expect(channelCreateSessionShape.policyProfile.safeParse(good).success).toBe(true);
+    }
+  });
+});

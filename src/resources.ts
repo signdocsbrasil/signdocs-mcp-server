@@ -17,13 +17,21 @@ adding an envelope signer. An invalid value returns HTTP 400.
 | CLICK_PLUS_OTP        | clickwrap + e-mail/SMS one-time code    | standard e-signature |
 | BIOMETRIC             | facial liveness + match                 | high-assurance identity |
 | BIOMETRIC_PLUS_OTP    | biometric + OTP                         | strongest hosted assurance |
+| DIGITAL_CERTIFICATE   | clickwrap + ICP-Brasil A1 signature     | qualified signature |
 | CUSTOM                | caller-defined ordered steps            | supply \`customSteps\` |
 
 When \`policyProfile=CUSTOM\`, set \`customSteps\` to an ordered list of step
 types, e.g. ["CLICKWRAP","OTP","BIOMETRIC_LIVENESS","BIOMETRIC_MATCH"].
 
-Digital ICP-Brasil A1 certificate signing is exposed through the transaction/
-advance flow (step type DIGITAL_CERTIFICATE), not as a hosted-session profile.
+**Signed in with a SignDocs account?** Only three of these are offered:
+CLICK_ONLY, CLICK_PLUS_OTP and DIGITAL_CERTIFICATE. The biometric profiles need
+hosted facial liveness, which is not enabled on that path — a session created
+with one would be charged and then be impossible to sign. CUSTOM is not offered
+either. The tool schema enforces this, so an unavailable value is refused before
+anything is spent.
+
+Every profile requires the signer's **cpf** or **cnpj**. Ask the user for it
+rather than sending without one.
 `;
 
 const QUICKSTART = `# SignDocs MCP quickstart
