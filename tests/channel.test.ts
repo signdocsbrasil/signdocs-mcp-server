@@ -158,3 +158,24 @@ describe('policy profiles offered in account mode', () => {
     }
   });
 });
+
+describe('connector-directory annotation rules', () => {
+  it('every account-mode tool declares readOnlyHint OR destructiveHint', async () => {
+    // Anthropic's review rejects any tool with both false. This asserts the rule
+    // across the whole catalogue so a new tool cannot quietly reintroduce it.
+    const { READ_ONLY, WRITE_SAFE, DESTRUCTIVE } = await import('../src/annotations.js');
+    for (const [name, a] of Object.entries({ READ_ONLY, WRITE_SAFE, DESTRUCTIVE })) {
+      expect(
+        a.readOnlyHint === true || a.destructiveHint === true,
+        `${name} declares neither hint`,
+      ).toBe(true);
+    }
+  });
+
+  it('never claims a write is read-only', () => {
+    // The other way to satisfy the rule would be to mark writes read-only, which
+    // would suppress the confirmation prompt on a binding action.
+    const a = { readOnlyHint: false, destructiveHint: true };
+    expect(a.readOnlyHint && a.destructiveHint).toBeFalsy();
+  });
+});

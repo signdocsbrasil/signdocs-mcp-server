@@ -26,10 +26,23 @@ export const READ_ONLY: ToolAnnotations = {
   openWorldHint: true,
 };
 
-/** Writes that are not legally binding nor irreversible (upload, resend OTP, register webhook). */
+/**
+ * Writes that are not legally binding nor irreversible (upload, resend OTP,
+ * register webhook).
+ *
+ * `destructiveHint` is true here even though none of these destroys anything,
+ * and that is deliberate. Anthropic's connector-directory review requires every
+ * tool to carry `readOnlyHint: true` OR `destructiveHint: true`; a tool with
+ * both false is an automatic rejection. These tools modify state, so read-only
+ * would be a lie, which leaves destructive as the only honest option available.
+ *
+ * The cost is a confirmation prompt on actions that did not strictly need one.
+ * That is the safe direction to be wrong in, and it is the price of the two-state
+ * vocabulary the directory offers.
+ */
 export const WRITE_SAFE: ToolAnnotations = {
   readOnlyHint: false,
-  destructiveHint: false,
+  destructiveHint: true,
   idempotentHint: false,
   openWorldHint: true,
 };
