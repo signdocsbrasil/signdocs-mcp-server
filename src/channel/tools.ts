@@ -39,14 +39,17 @@ function channel(ctx: ToolContext): ChannelApi {
   return ctx.channelApi;
 }
 
+/**
+ * No `documentBase64` here on purpose — see channel/schemas.ts. Dropping the
+ * mapping as well as the field means a client still sending the OLD cached
+ * schema cannot smuggle model-authored bytes through this path either.
+ */
 function documentFrom(args: {
-  documentBase64?: string;
   uploadToken?: string;
   documentUrl?: string;
   documentFilename?: string;
 }): ChannelDocument {
   return {
-    ...(args.documentBase64 ? { content: args.documentBase64 } : {}),
     ...(args.uploadToken ? { uploadToken: args.uploadToken } : {}),
     ...(args.documentUrl ? { documentUrl: args.documentUrl } : {}),
     ...(args.documentFilename ? { filename: args.documentFilename } : {}),

@@ -179,3 +179,42 @@ describe('connector-directory annotation rules', () => {
     expect(a.readOnlyHint && a.destructiveHint).toBeFalsy();
   });
 });
+
+describe('account mode never accepts model-supplied document bytes', () => {
+  /**
+   * In a chat the model does not hold the bytes of a file the user attached —
+   * an attachment reaches it as extracted text. So a base64 field is not a
+   * convenience, it is a trap: the model fills it with a PDF it reconstructed,
+   * the send succeeds, and the signature attests to the model's approximation
+   * rather than the user's contract. Nothing looks wrong.
+   *
+   * Tenant mode keeps base64, because an API integrator genuinely has the file.
+   */
+  const CHANNEL_SHAPES = [
+    'channelCreateSessionShape',
+    'channelCreateEnvelopeShape',
+    'channelVerifyDocumentShape',
+  ] as const;
+
+  it.each(CHANNEL_SHAPES)('%s offers no base64 field', async (name) => {
+    const schemas = await import('../src/channel/schemas.js');
+    const shape = (schemas as Record<string, unknown>)[name] as Record<string, unknown>;
+    expect(shape).toBeDefined();
+    expect(Object.keys(shape)).not.toContain('documentBase64');
+  });
+
+  it.each(CHANNEL_SHAPES)('%s still offers the two paths with real provenance', async (name) => {
+    const schemas = await import('../src/channel/schemas.js');
+    const shape = (schemas as Record<string, unknown>)[name] as Record<string, unknown>;
+    // uploadToken: byte-for-byte from the user's own browser.
+    // documentUrl: fetched server-side, so the bytes are not the model's either.
+    expect(Object.keys(shape)).toContain('uploadToken');
+    expect(Object.keys(shape)).toContain('documentUrl');
+  });
+
+  it('tenant mode is unchanged — an API caller really does hold the file', async () => {
+    const schemas = await import('../src/schemas.js');
+    const shape = (schemas as Record<string, unknown>).createSigningSessionShape as Record<string, unknown>;
+    expect(Object.keys(shape)).toContain('documentBase64');
+  });
+});

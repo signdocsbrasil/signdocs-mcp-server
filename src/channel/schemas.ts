@@ -38,8 +38,23 @@ const POLICY_PROFILE = z
       'Read the signdocs://policy-profiles resource before choosing.',
   );
 
+/**
+ * How a document reaches the channel.
+ *
+ * There is deliberately NO base64 field here, unlike tenant mode. In a chat the
+ * model never holds the bytes of a file the user attached — an attachment
+ * reaches it as extracted text — so anything it could put in a base64 field
+ * would be a PDF it reconstructed. The send would then succeed: real session,
+ * real quota, real signature, and an evidence hash over the model's
+ * approximation rather than the user's contract. Failing loudly is better, and
+ * offering no field at all is better still.
+ *
+ * Both remaining paths have real provenance: `uploadToken` puts the file into
+ * SignDocs byte for byte from the user's own browser, and `documentUrl` is
+ * fetched server-side. Drafting still works — the model writes it, the user
+ * downloads it and drops it on the upload page.
+ */
 const documentFields = {
-  documentBase64: z.string().optional().describe('The PDF as base64. Prefer uploadToken for anything a human picked.'),
   uploadToken: z
     .string()
     .optional()

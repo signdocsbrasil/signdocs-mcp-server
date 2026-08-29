@@ -12,7 +12,7 @@ import { registerResources } from './resources.js';
 import { registerChannelTools } from './channel/tools.js';
 
 export const SERVER_NAME = 'signdocs-brasil';
-export const SERVER_VERSION = '0.9.1';
+export const SERVER_VERSION = '0.10.0';
 
 const INSTRUCTIONS = `SignDocs Brasil electronic-signature API.
 
