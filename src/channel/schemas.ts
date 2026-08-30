@@ -102,11 +102,23 @@ export const channelCreateEnvelopeShape = {
       }),
     )
     .min(1)
-    .describe('Every signer, in order. One call carries the whole envelope — there is no add-signer step.'),
+    .describe(
+      'Every signer, IN SIGNING ORDER — array position is the order, there is no separate '
+      + 'order field. Position 1 signs first. One call carries the whole envelope; there is '
+      + 'no add-signer step. When the order matters, confirm it with the user before sending, '
+      + 'because listing people in a sentence is not the same as choosing a sequence.',
+    ),
   signingMode: z
     .enum(['PARALLEL', 'SEQUENTIAL'])
     .optional()
-    .describe('SEQUENTIAL makes each signer wait for the previous one. Defaults to PARALLEL.'),
+    .describe(
+      'SEQUENTIAL makes each signer wait for the previous one. Defaults to PARALLEL — EXCEPT '
+      + 'that any signer with profile DIGITAL_CERTIFICATE forces the whole envelope to '
+      + 'SEQUENTIAL, whatever is asked for here, because each certificate signature is applied '
+      + 'over the previous signer\'s signed PDF. One certificate signer among click signers is '
+      + 'enough. The response says signingModeForced: true when that happened — tell the user, '
+      + 'because their people will be invited one at a time instead of all at once.',
+    ),
 };
 
 export const channelSessionIdShape = {

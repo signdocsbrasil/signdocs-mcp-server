@@ -12,7 +12,7 @@ import { registerResources } from './resources.js';
 import { registerChannelTools } from './channel/tools.js';
 
 export const SERVER_NAME = 'signdocs-brasil';
-export const SERVER_VERSION = '0.10.0';
+export const SERVER_VERSION = '0.11.0';
 
 const INSTRUCTIONS = `SignDocs Brasil electronic-signature API.
 
@@ -34,6 +34,16 @@ sending, and call get_my_account if you are unsure any allowance is left.
 To sign a file the user has locally, call request_document_upload and give them
 the link: attached bytes never reach these tools. A multi-signer send is ONE
 create_envelope call carrying every signer.
+
+Signer ORDER is the array order in create_envelope — position 1 signs first.
+Naming people in a sentence is not the same as choosing a sequence, so when the
+order will be enforced, read it back and get agreement before sending. It is
+always enforced when any signer uses DIGITAL_CERTIFICATE: that forces the whole
+envelope to SEQUENTIAL regardless of signingMode, because each certificate
+signature is applied over the previous signer's signed PDF. When the response
+comes back with signingModeForced, say plainly that the order was made
+sequential and who signs first — those people will be invited one at a time,
+not all at once, and the sender needs to know that is expected.
 
 Read the signdocs://quickstart and signdocs://policy-profiles resources before
 creating sessions. Tools named create_* and cancel_* are consequential and

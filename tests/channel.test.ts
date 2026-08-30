@@ -218,3 +218,42 @@ describe('account mode never accepts model-supplied document bytes', () => {
     expect(Object.keys(shape)).toContain('documentBase64');
   });
 });
+
+describe('signing order is stated, not left to be inferred', () => {
+  /**
+   * There is no order field: signerIndex comes from array position. So the
+   * order is whatever order the model listed people in — which comes from the
+   * order the user happened to name them in a sentence. That is harmless for
+   * click signers and load-bearing for certificates, where SEQUENTIAL is forced
+   * and signer 2 genuinely cannot start until signer 1 finishes.
+   *
+   * These assertions are on the words the model reads, because that is the only
+   * place the coupling is visible to it.
+   */
+  it('tells the model that array position IS the order', async () => {
+    const { channelCreateEnvelopeShape } = await import('../src/channel/schemas.js');
+    const d = (channelCreateEnvelopeShape.signers as any).description as string;
+    expect(d).toContain('IN SIGNING ORDER');
+    expect(d).toContain('Position 1 signs first');
+    expect(d.toLowerCase()).toContain('confirm it with the user');
+  });
+
+  it('warns that a certificate signer overrides signingMode', async () => {
+    const { channelCreateEnvelopeShape } = await import('../src/channel/schemas.js');
+    const d = (channelCreateEnvelopeShape.signingMode as any).description as string;
+    expect(d).toContain('DIGITAL_CERTIFICATE forces');
+    expect(d).toContain('signingModeForced');
+    // The plain default must not be stated without the exception beside it.
+    expect(d).toContain('EXCEPT');
+  });
+
+  it('instructs the model to surface a forced order', async () => {
+    const { createServer } = await import('../src/server.js');
+    const ctx = { mode: 'channel', channelApi: {} } as any;
+    const srv = createServer(ctx) as any;
+    const instructions: string =
+      srv?.server?._instructions ?? srv?._instructions ?? srv?.options?.instructions ?? '';
+    expect(instructions).toContain('signingModeForced');
+    expect(instructions).toContain('who signs first');
+  });
+});
