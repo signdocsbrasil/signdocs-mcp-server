@@ -63,7 +63,11 @@ export function registerChannelTools(server: McpServer, ctx: ToolContext): void 
       title: 'Get my SignDocs account and quota',
       description:
         'Show the signed-in account, its plan, and how many documents remain this period. ' +
-        'Call this before a send if you are unsure whether there is quota left.',
+        'Call this before a send if you are unsure whether there is quota left. ' +
+        'Also returns `user.profile` — the nome/razão social and CPF/CNPJ the account is ' +
+        'registered under. When the user is signing their OWN document, copy those values into ' +
+        'the signer row verbatim: the server refuses a self-signer row that disagrees with the ' +
+        'cadastro, and a chat has no form to correct it in.',
       inputSchema: emptyShape,
       annotations: READ_ONLY,
     },

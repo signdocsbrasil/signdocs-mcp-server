@@ -66,19 +66,34 @@ const documentFields = {
   documentFilename: z.string().optional().describe('Display filename, e.g. contrato.pdf.'),
 };
 
+// The self-signer rule, repeated on each field because a model reads the field
+// it is filling, not the object description above it.
+//
+// The server refuses a send whose signer row is the account holder but whose
+// name or document disagrees with the cadastro. That is unfixable from a chat —
+// there is no form to send anyone back to — so the way through is to copy the
+// registered values rather than reproduce what the user typed in the
+// conversation. `get_my_account` returns them.
+const SELF_RULE =
+  ' If this signer is the signed-in account (same e-mail), this MUST match the account exactly: '
+  + 'call get_my_account and copy `user.profile` verbatim. Do NOT use the spelling the user typed '
+  + 'in chat — a send whose own row disagrees with the cadastro is refused.';
+
 const channelSigner = z
   .object({
-    name: z.string().describe('Signer full name.'),
+    name: z.string().describe('Signer full name.' + SELF_RULE),
     email: z.string().email().optional().describe('Where the invite goes. Defaults to the signed-in account.'),
     // Not optional in practice. The API requires one or the other on EVERY
     // profile (signing-sessions/create.ts), and describing it as CLICK_ONLY-only
     // is what sent the first real ChatGPT session into a 400.
     cpf: z.string().optional().describe(
       'Brazilian individual taxpayer ID (CPF), digits only. REQUIRED unless you pass cnpj — ' +
-        'the signature is attributed to this document, so ask the user for it before sending.',
+        'the signature is attributed to this document, so ask the user for it before sending.'
+        + SELF_RULE,
     ),
     cnpj: z.string().optional().describe(
-      'Brazilian company taxpayer ID (CNPJ), digits only. Use instead of cpf when the signer signs for a company.',
+      'Brazilian company taxpayer ID (CNPJ), digits only. Use instead of cpf when the signer signs for a company.'
+        + ' An account registered as pessoa física cannot sign with a cnpj, and the send is refused if it tries.',
     ),
   })
   .describe('The person who will sign.');
