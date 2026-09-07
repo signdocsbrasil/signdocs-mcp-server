@@ -1,6 +1,6 @@
 {
   "name": "@signdocs-brasil/mcp-server",
-  "version": "0.11.1",
+  "version": "0.11.2",
   "mcpName": "br.com.signdocs/mcp-server",
   "description": "Servidor MCP oficial da SignDocs Brasil: assinatura eletrônica e digital com ICP-Brasil, biometria e OTP direto de agentes de IA. Official MCP server for the SignDocs Brasil e-signature API — create signing sessions, manage envelopes and verify documents. Local stdio, remote HTTP and AWS Lambda transports.",
   "license": "MIT",
