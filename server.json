@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "br.com.signdocs/mcp-server",
   "description": "Assinatura eletrônica no Brasil (ICP-Brasil): envie, assine e verifique com sua conta SignDocs.",
-  "version": "0.11.0",
+  "version": "0.11.1",
   "websiteUrl": "https://www.signdocs.com.br/integracao-claude-ia-mcp.html",
   "repository": {
     "url": "https://github.com/signdocsbrasil/signdocs-mcp-server",
@@ -13,7 +13,7 @@
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "@signdocs-brasil/mcp-server",
-      "version": "0.11.0",
+      "version": "0.11.1",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
