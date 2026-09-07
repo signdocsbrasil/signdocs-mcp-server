@@ -6,3 +6,11 @@ coverage/
 .env.*
 !.env.example
 .DS_Store
+
+# Local agent/assistant config - never committed, never shipped
+.claude/
+CLAUDE.md
+AGENTS.md
+.cursor/
+.windsurf/
+.aider*
