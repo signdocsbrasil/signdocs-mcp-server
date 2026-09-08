@@ -81,8 +81,21 @@ catalog.
 
 ## 3. Other directories (optional)
 
-- **Smithery** (smithery.ai) — submit the npm server / remote endpoint.
-- **mcp.so / Glama / PulseMCP** community catalogs — submit the GitHub repo.
+- **Glama** (glama.ai) — **LIVE, evaluated 2026-09-08.** Auto-indexed from the public
+  repo, no submission needed:
+  https://glama.ai/mcp/servers/signdocsbrasil/signdocs-mcp-server — official vendor
+  server, tool definitions rated **A** (24 tools), remote-capable, maintenance **B**.
+  The score badge
+  (`https://glama.ai/mcp/servers/signdocsbrasil/signdocs-mcp-server/badges/score.svg`)
+  is the artifact `awesome-mcp-servers` gates on.
+- **awesome-mcp-servers** (`punkpeye/awesome-mcp-servers`) — **PR #13945 OPEN** since
+  2026-09-08, filed under 🤝 Agreements & Coordination on the agent fast-track. The
+  `github-actions` bot requires the server to be Glama-evaluated with a quality score;
+  that is already satisfied (above). Same maintainer runs Glama and this list.
+- **mcp.so** (`chatmcp/mcpso`) — **SUBMITTED 2026-09-08**, listing comment on issue #1.
+  That thread is an open firehose of drive-by agent listings; expect no direct reply.
+- **Smithery** (smithery.ai) — still open. Submit the npm server / remote endpoint.
+- **PulseMCP** (pulsemcp.com) — still open. Submit the GitHub repo.
 - **Claude connector directory (claude.ai web)** — UNBLOCKED: the SignDocs OAuth
   server now supports `authorization_code` + PKCE + DCR + AS metadata, live in prod
   (`auth.signdocs.com.br`), and the custom connector is verified working in the
