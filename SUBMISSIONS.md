@@ -94,8 +94,28 @@ catalog.
   that is already satisfied (above). Same maintainer runs Glama and this list.
 - **mcp.so** (`chatmcp/mcpso`) — **SUBMITTED 2026-09-08**, listing comment on issue #1.
   That thread is an open firehose of drive-by agent listings; expect no direct reply.
-- **Smithery** (smithery.ai) — still open. Submit the npm server / remote endpoint.
-- **PulseMCP** (pulsemcp.com) — still open. Submit the GitHub repo.
+- **PulseMCP** (pulsemcp.com) — **LIVE, nothing to do.**
+  https://www.pulsemcp.com/servers/signdocs-brasil, flagged "Official repository",
+  dated 2026-06-27. PulseMCP mirrors the official MCP registry, so publishing
+  `br.com.signdocs/mcp-server` there listed us automatically. Their submission form is
+  closed anyway ("not accepting new MCP server or client submissions right now") and
+  points people at the official registry instead. Do NOT submit.
+- **Smithery** (smithery.ai) — **the only catalog still open.** Not a passive index: it
+  is a hosted gateway that proxies agent traffic to the server and brokers the OAuth,
+  so it needs the live prod endpoint, not the repo. Publish via
+  https://smithery.ai/new with `https://mcp.signdocs.com.br/mcp` (Streamable HTTP).
+  Prerequisites are already met, no server change needed:
+  - `POST /mcp` unauthenticated returns 401 with
+    `WWW-Authenticate: Bearer resource_metadata="https://mcp.signdocs.com.br/.well-known/oauth-protected-resource/mcp"`,
+    which is the discovery hop the scanner follows.
+  - `auth.signdocs.com.br` advertises `client_id_metadata_document_supported: true`;
+    CIMD is exactly how Smithery registers itself as a client, so no manual client
+    provisioning.
+  The scan prompts for an OAuth login (a human at a browser, with a SignDocs account)
+  and then reads the 24 tools off the live server. Afterwards, Settings → Verification
+  runs the official-vendor checklist. Fallback if the scan ever fails: serve
+  `/.well-known/mcp/server-card.json` (currently 404). A `.mcpb` bundle upload is the
+  alternative path, and one already ships on the plugin repo's Releases.
 - **Claude connector directory (claude.ai web)** — UNBLOCKED: the SignDocs OAuth
   server now supports `authorization_code` + PKCE + DCR + AS metadata, live in prod
   (`auth.signdocs.com.br`), and the custom connector is verified working in the
