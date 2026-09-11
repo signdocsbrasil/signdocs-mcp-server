@@ -3,7 +3,7 @@ import type { CreateEnvelopeRequest, AddEnvelopeSessionRequest } from '@signdocs
 import type { ToolContext } from '../client.js';
 import { buildSigningUrl } from '../client.js';
 import { CONFIRM_WARNING, DESTRUCTIVE, READ_ONLY } from '../annotations.js';
-import { run, runWithLinks, idempotencyKey, resolveDocument } from './helpers.js';
+import { run, runWithLinks, idempotencyKey, resolveDocument, type WithDeliveryChannels } from './helpers.js';
 import { createEnvelopeShape, envelopeIdShape, addEnvelopeSessionShape } from '../schemas.js';
 
 export function registerEnvelopeTools(server: McpServer, ctx: ToolContext): void {
@@ -62,7 +62,7 @@ export function registerEnvelopeTools(server: McpServer, ctx: ToolContext): void
     },
     async (args) =>
       run(async () => {
-        const req: AddEnvelopeSessionRequest = {
+        const req: WithDeliveryChannels<AddEnvelopeSessionRequest> = {
           signer: args.signer,
           policy: { profile: args.policyProfile },
           signerIndex: args.signerIndex,
@@ -70,8 +70,9 @@ export function registerEnvelopeTools(server: McpServer, ctx: ToolContext): void
           ...(args.returnUrl ? { returnUrl: args.returnUrl } : {}),
           ...(args.cancelUrl ? { cancelUrl: args.cancelUrl } : {}),
           ...(args.metadata ? { metadata: args.metadata } : {}),
+          ...(args.deliverVia ? { deliverVia: args.deliverVia } : {}),
         };
-        const session = await ctx.client.envelopes.addSession(args.envelopeId, req);
+        const session = await ctx.client.envelopes.addSession(args.envelopeId, req as AddEnvelopeSessionRequest);
         return { ...session, signingUrl: buildSigningUrl(session.url, session.clientSecret) };
       }),
   );

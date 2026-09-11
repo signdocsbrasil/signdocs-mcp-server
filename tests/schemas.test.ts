@@ -106,3 +106,51 @@ describe('addEnvelopeSessionShape', () => {
     expect(addSession.parse({ ...base, signerIndex: 1 }).signerIndex).toBe(1);
   });
 });
+
+describe('delivery and OTP channels', () => {
+  const base = {
+    purpose: 'DOCUMENT_SIGNATURE',
+    policyProfile: 'CLICK_PLUS_OTP',
+    signer: { name: 'Maria', userExternalId: 'u-1', cpf: '12345678909', phone: '+5541999998888' },
+  };
+
+  it('accepts every OTP channel the API does', () => {
+    for (const otpChannel of ['email', 'sms', 'whatsapp', 'telegram']) {
+      const parsed = signingSession.parse({ ...base, signer: { ...base.signer, otpChannel } });
+      expect(parsed.signer.otpChannel).toBe(otpChannel);
+    }
+  });
+
+  it('takes deliverVia at the top level on both session tools', () => {
+    expect(signingSession.parse({ ...base, deliverVia: ['whatsapp', 'telegram'] }).deliverVia).toEqual([
+      'whatsapp',
+      'telegram',
+    ]);
+    const addSession = z.object(addEnvelopeSessionShape);
+    const parsed = addSession.parse({
+      envelopeId: 'env_1',
+      signer: base.signer,
+      policyProfile: 'CLICK_ONLY',
+      signerIndex: 1,
+      deliverVia: ['email'],
+    });
+    expect(parsed.deliverVia).toEqual(['email']);
+  });
+
+  it('rejects an empty deliverVia and channels it does not offer', () => {
+    // The API answers [] with a 400; refusing it here saves the round trip.
+    expect(() => signingSession.parse({ ...base, deliverVia: [] })).toThrow();
+    expect(() => signingSession.parse({ ...base, deliverVia: ['sms'] })).toThrow();
+  });
+
+  it('warns that telegram needs a CPF the ChatGPT connector does not send', () => {
+    const texts = [
+      createSigningSessionShape.deliverVia.description,
+      createSigningSessionShape.signer.shape.otpChannel.description,
+    ];
+    for (const text of texts) {
+      expect(text).toMatch(/cpf/i);
+      expect(text).toMatch(/ChatGPT/);
+    }
+  });
+});

@@ -3,7 +3,7 @@ import type { CreateSigningSessionRequest } from '@signdocs-brasil/api';
 import type { ToolContext } from '../client.js';
 import { buildSigningUrl } from '../client.js';
 import { CONFIRM_WARNING, DESTRUCTIVE, READ_ONLY, WRITE_SAFE } from '../annotations.js';
-import { run, idempotencyKey, resolveDocument } from './helpers.js';
+import { run, idempotencyKey, resolveDocument, type WithDeliveryChannels } from './helpers.js';
 import {
   createSigningSessionShape,
   sessionIdShape,
@@ -26,7 +26,7 @@ export function registerSigningSessionTools(server: McpServer, ctx: ToolContext)
     async (args) =>
       run(async () => {
         const document = await resolveDocument(args, ctx);
-        const req: CreateSigningSessionRequest = {
+        const req: WithDeliveryChannels<CreateSigningSessionRequest> = {
           purpose: args.purpose,
           policy: {
             profile: args.policyProfile,
@@ -41,8 +41,12 @@ export function registerSigningSessionTools(server: McpServer, ctx: ToolContext)
           ...(args.locale ? { locale: args.locale } : {}),
           ...(args.expiresInMinutes ? { expiresInMinutes: args.expiresInMinutes } : {}),
           ...(args.owner ? { owner: args.owner } : {}),
+          ...(args.deliverVia ? { deliverVia: args.deliverVia } : {}),
         };
-        const session = await ctx.client.signingSessions.create(req, idempotencyKey(args.idempotencyKey));
+        const session = await ctx.client.signingSessions.create(
+          req as CreateSigningSessionRequest,
+          idempotencyKey(args.idempotencyKey),
+        );
         return { ...session, signingUrl: buildSigningUrl(session.url, session.clientSecret) };
       }),
   );
@@ -102,13 +106,19 @@ export function registerSigningSessionTools(server: McpServer, ctx: ToolContext)
     'resend_signing_session_otp',
     {
       title: 'Resend signing session OTP',
-      description: 'Resend the OTP challenge for a signing session, optionally over a specific channel (email/sms).',
+      description: 'Resend the OTP challenge for a signing session, optionally over a specific channel (email, sms, whatsapp or telegram).',
       inputSchema: resendOtpShape,
       annotations: WRITE_SAFE,
     },
     async (args) =>
       run(() =>
-        ctx.client.signingSessions.resendOtp(args.sessionId, args.channel ? { channel: args.channel } : undefined),
+        ctx.client.signingSessions.resendOtp(
+          args.sessionId,
+          // The API accepts all four channels; @signdocs-brasil/api 1.6.1 still types two.
+          args.channel
+            ? ({ channel: args.channel } as unknown as Parameters<typeof ctx.client.signingSessions.resendOtp>[1])
+            : undefined,
+        ),
       ),
   );
 }

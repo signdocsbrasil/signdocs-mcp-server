@@ -20,15 +20,33 @@ const POLICY_PROFILE = z
       'Read the signdocs://policy-profiles resource for the authoritative list — an invalid value returns 400.',
   );
 
+// Repeated on otpChannel and deliverVia: a model reads the field it is filling.
+const TELEGRAM_NEEDS_CPF =
+  'telegram needs signer.cpf, which the ChatGPT connector does not send, so it only works from clients that pass it (Claude does).';
+
+const DELIVER_VIA = z
+  .array(z.enum(['email', 'whatsapp', 'telegram']))
+  .min(1)
+  .optional()
+  .describe(
+    'Channels SignDocs sends this signer the signing link on. Omit for the e-mail invite only. ' +
+      'whatsapp needs signer.phone; ' +
+      TELEGRAM_NEEDS_CPF +
+      ' WhatsApp/Telegram are enabled per tenant on request: 403 if not enabled, 429 when the messaging quota runs out.',
+  );
+
 const signerObject = z
   .object({
     name: z.string().describe('Signer full name.'),
     userExternalId: z.string().describe('Stable per-signer ID in your system (used for biometric enrollment lookup).'),
     email: z.string().email().optional().describe('Required to email the signer their invite link.'),
-    phone: z.string().optional().describe('E.164 phone, e.g. +5541999998888 (for SMS OTP).'),
+    phone: z.string().optional().describe('E.164 phone, e.g. +5541999998888 (for SMS/WhatsApp OTP and WhatsApp delivery).'),
     cpf: z.string().optional().describe('Brazilian individual taxpayer ID (digits only).'),
     cnpj: z.string().optional().describe('Brazilian company taxpayer ID (digits only).'),
-    otpChannel: z.enum(['email', 'sms']).optional().describe('Preferred OTP delivery channel.'),
+    otpChannel: z
+      .enum(['email', 'sms', 'whatsapp', 'telegram'])
+      .optional()
+      .describe('Preferred OTP delivery channel. sms/whatsapp need phone; ' + TELEGRAM_NEEDS_CPF),
     otpChannelSelectable: z.boolean().optional().describe('Let the signer pick the OTP channel.'),
     birthDate: z.string().optional().describe('ISO date (YYYY-MM-DD), used by some gov-db validations.'),
   })
@@ -85,6 +103,7 @@ export const createSigningSessionShape = {
   locale: LOCALE.optional(),
   expiresInMinutes: z.number().int().min(5).max(1440).optional().describe('Session lifetime, 5–1440 min (default 60).'),
   owner: ownerObject,
+  deliverVia: DELIVER_VIA,
   idempotencyKey: z.string().optional().describe('Idempotency key for safe retries; a UUID is generated if omitted.'),
 };
 
@@ -102,7 +121,7 @@ export const listSigningSessionsShape = {
 
 export const resendOtpShape = {
   sessionId: z.string().describe('The signing session ID.'),
-  channel: z.enum(['email', 'sms']).optional().describe('Override OTP delivery channel.'),
+  channel: z.enum(['email', 'sms', 'whatsapp', 'telegram']).optional().describe('Override OTP delivery channel.'),
 };
 
 // ── Envelopes (multi-signer) ─────────────────────────────────────────────────
@@ -136,6 +155,7 @@ export const addEnvelopeSessionShape = {
   returnUrl: z.string().url().optional(),
   cancelUrl: z.string().url().optional(),
   metadata,
+  deliverVia: DELIVER_VIA,
 };
 
 // ── Documents ────────────────────────────────────────────────────────────────

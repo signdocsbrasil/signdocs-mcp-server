@@ -114,3 +114,14 @@ export async function runWithLinks(
 export function idempotencyKey(provided?: string): string {
   return provided ?? randomUUID();
 }
+
+/**
+ * `@signdocs-brasil/api` 1.6.1 types predate WhatsApp/Telegram OTP and the
+ * top-level `deliverVia`, both of which the API accepts. The SDK sends the body
+ * through unchanged, so widening the request type here is enough until it
+ * catches up.
+ */
+export type WithDeliveryChannels<T extends { signer: object }> = Omit<T, 'signer'> & {
+  signer: Omit<T['signer'], 'otpChannel'> & { otpChannel?: 'email' | 'sms' | 'whatsapp' | 'telegram' };
+  deliverVia?: Array<'email' | 'whatsapp' | 'telegram'>;
+};
