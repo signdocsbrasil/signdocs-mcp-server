@@ -92,6 +92,9 @@ catalog.
   2026-09-08, filed under 🤝 Agreements & Coordination on the agent fast-track. The
   `github-actions` bot requires the server to be Glama-evaluated with a quality score;
   that is already satisfied (above). Same maintainer runs Glama and this list.
+  2026-10-09: maintainer asked us to **claim** the Glama listing first. Done by signing in
+  to Glama with GitHub as `signdocsbrasil` (a user account, so no `glama.json` needed);
+  the Admin tab on the listing confirms it. Replied on the PR the same day.
 - **mcp.so** (`chatmcp/mcpso`) — **SUBMITTED 2026-09-08**, listing comment on issue #1.
   That thread is an open firehose of drive-by agent listings; expect no direct reply.
 - **PulseMCP** (pulsemcp.com) — **LIVE, nothing to do.**
